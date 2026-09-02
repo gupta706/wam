@@ -10,7 +10,6 @@ __pycache__/
 *$py.class
 
 # Visualization Outputs
-*.png
 *.jpg
 *.pdf
 
