@@ -1,0 +1,18 @@
+# Virtual Environments
+venv/
+env/
+.env
+.venv/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Visualization Outputs
+*.png
+*.jpg
+*.pdf
+
+# macOS
+.DS_Store
