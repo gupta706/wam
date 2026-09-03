@@ -28,8 +28,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-torch.set_num_threads(max(1, torch.get_num_threads()))
+import multiprocessing
+import os
 
+cores = multiprocessing.cpu_count()
+torch.set_num_threads(cores)
+os.environ['OMP_NUM_THREADS'] = str(cores)
+os.environ['MKL_NUM_THREADS'] = str(cores)
 
 def _long(arr) -> torch.Tensor:
     """numpy int array -> torch long tensor WITHOUT the (broken under numpy 2.0)
@@ -122,14 +127,17 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
                lr: float = 3e-3, seed: int = 0, verbose: bool = False):
     """Train the tiny TS language model by cross-entropy next-token loss."""
     torch.manual_seed(seed)
-    model = TinyTSLM(B=B, d_model=d_model, n_layer=n_layer, ctx=ctx)
+    device = torch.device('mps' if torch.backends.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu')
+    model = TinyTSLM(B=B, d_model=d_model, n_layer=n_layer, ctx=ctx).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    X = _long(windows)
+    X = _long(windows).to(device)
     n = X.shape[0]
     lossfn = nn.CrossEntropyLoss()
+    import time
+    last_print_time = time.time()
     model.train()
     for ep in range(epochs):
-        perm = torch.randperm(n)
+        perm = torch.randperm(n, device=device)
         tot = 0.0
         for i in range(0, n, batch):
             idx = X[perm[i:i + batch]]
@@ -140,6 +148,13 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             tot += float(loss) * idx.shape[0]
+            
+            if verbose and (i // batch) % 20 == 0:
+                current_time = time.time()
+                elapsed = current_time - last_print_time
+                print(f"      Batch {i // batch + 1}/{(n + batch - 1) // batch}, Current Loss: {loss.item():.4f}, Time: {elapsed:.2f}s")
+                last_print_time = current_time
+                
         if verbose:
             print(f"    epoch {ep + 1}/{epochs}  CE = {tot / n:.4f} nats")
     model.eval()
@@ -155,19 +170,20 @@ def forecast_channel(model: TinyTSLM, quant: MeanScaleQuantizer,
                      temperature: float = 1.0):
     """Probabilistic forecast of one univariate channel.  Returns (n_samples,H)
     de-quantized sample paths in the ORIGINAL observation units."""
+    device = next(model.parameters()).device
     ctx = model.ctx
     s = quant.scale(context)
     ctok = quant.quantize(context, s)
     if len(ctok) < ctx:
         ctok = np.concatenate([np.full(ctx - len(ctok), ctok[0]), ctok])
     ctok = ctok[-ctx:]
-    base = _long(ctok)[None].repeat(n_samples, 1)              # (S, ctx)
+    base = _long(ctok)[None].repeat(n_samples, 1).to(device)   # (S, ctx)
     out = np.zeros((n_samples, H), dtype=np.int64)
     for h in range(H):
         logits = model(base)[:, -1, :] / temperature
         probs = torch.softmax(logits, dim=-1)
         nxt = torch.multinomial(probs, 1)                      # (S,1)
-        out[:, h] = np.asarray(nxt[:, 0].tolist(), dtype=np.int64)
+        out[:, h] = np.asarray(nxt[:, 0].cpu().tolist(), dtype=np.int64)
         base = torch.cat([base[:, 1:], nxt], dim=1)
     return quant.dequantize(out, s)                            # (S, H) real units
 
@@ -179,18 +195,20 @@ def expected_next(model: TinyTSLM, windows: np.ndarray,
     a batch of token windows (N, L).  Returns (N,) expected next value in
     SCALED units (multiply by each window's scale to get original units).
     This is the tokenized model's minimum-MSE one-step point forecast."""
-    logits = model(_long(windows))[:, -1, :]           # (N, B)
+    device = next(model.parameters()).device
+    logits = model(_long(windows).to(device))[:, -1, :]        # (N, B)
     p = torch.softmax(logits, dim=-1)
-    ctr = torch.tensor(np.asarray(centers).tolist(), dtype=torch.float32)
+    ctr = torch.tensor(np.asarray(centers).tolist(), dtype=torch.float32, device=device)
     ev = (p * ctr[None]).sum(-1)                        # (N,)
-    return np.asarray(ev.tolist())
+    return np.asarray(ev.cpu().tolist())
 
 
 @torch.no_grad()
 def one_step_ce(model: TinyTSLM, windows: np.ndarray, B: int) -> float:
     """Mean one-step cross-entropy (nats/token) on held-out token windows --
     the Chronos training objective, an empirical predictive-entropy proxy."""
-    X = _long(windows)
+    device = next(model.parameters()).device
+    X = _long(windows).to(device)
     inp, tgt = X[:, :-1], X[:, 1:]
     logits = model(inp)
     ce = nn.functional.cross_entropy(logits.reshape(-1, B), tgt.reshape(-1))
