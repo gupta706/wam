@@ -140,7 +140,7 @@ def load_or_generate(name, N, T, seed, generate_fn):
         return data
 
 def main():
-    N = 1000
+    N = 400
     M = 50
     print("\n--- Processing LQG data ---")
     lqg_train = load_or_generate("lqg_train", N, 700, 10, generate_lqg_corpus)

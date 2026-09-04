@@ -65,7 +65,10 @@ class MeanScaleQuantizer:
             xs = np.asarray(x) / s[..., None]
         else:
             xs = np.asarray(x) / s
-        return np.digitize(xs, self.edges).astype(np.int64)   # -> {0,...,B-1}
+            
+        dx = 20.0 / (self.B - 1)
+        idx = np.floor((xs - self.edges[0]) / dx) + 1
+        return np.clip(idx, 0, self.B - 1).astype(np.int64)
 
     def dequantize(self, ids: np.ndarray, s) -> np.ndarray:
         s = np.asarray(s)
@@ -154,8 +157,8 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu')
     model = TinyTSLM(B=B, d_model=d_model, n_layer=n_layer, ctx=ctx).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    X = _long(windows).to(device)
-    n = X.shape[0]
+    
+    n = len(windows)
     lossfn = nn.CrossEntropyLoss()
     
     import time
@@ -167,10 +170,11 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
     epoch_losses = []
     
     for ep in range(epochs):
-        perm = torch.randperm(n, device=device)
+        perm = torch.randperm(n) # CPU permutation
         tot = 0.0
         for i in range(0, n, batch):
-            idx = X[perm[i:i + batch]]
+            # Move only the minibatch to the GPU
+            idx = torch.tensor(windows[perm[i:i + batch]], dtype=torch.long, device=device)
             inp, tgt = idx[:, :-1], idx[:, 1:]
             logits = model(inp)
             loss = lossfn(logits.reshape(-1, B), tgt.reshape(-1))
