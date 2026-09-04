@@ -187,7 +187,7 @@ def main():
         np.save(tokenized_path, Wtr)
     
     print("\n--- Training Unified Foundation Model ---")
-    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=30, d_model=256, n_layer=10, verbose=True, seed=0)
+    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=30, d_model=256, n_layer=10, batch=32, verbose=True, seed=0)
     
     evaluate_model("LQG", model, quant, lqg_test)
     evaluate_model("Kuramoto", model, quant, kur_test)
