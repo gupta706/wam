@@ -59,12 +59,20 @@ class MeanScaleQuantizer:
         s = np.mean(np.abs(ctx))
         return float(s) if s > 1e-6 else 1.0
 
-    def quantize(self, x: np.ndarray, s: float) -> np.ndarray:
-        xs = np.asarray(x) / s
+    def quantize(self, x: np.ndarray, s) -> np.ndarray:
+        s = np.asarray(s)
+        if s.ndim > 0:
+            xs = np.asarray(x) / s[..., None]
+        else:
+            xs = np.asarray(x) / s
         return np.digitize(xs, self.edges).astype(np.int64)   # -> {0,...,B-1}
 
-    def dequantize(self, ids: np.ndarray, s: float) -> np.ndarray:
-        return self.centers[np.asarray(ids)] * s
+    def dequantize(self, ids: np.ndarray, s) -> np.ndarray:
+        s = np.asarray(s)
+        if s.ndim > 0:
+            return self.centers[np.asarray(ids)] * s[..., None]
+        else:
+            return self.centers[np.asarray(ids)] * s
 
 
 # --------------------------------------------------------------------------- #
@@ -107,16 +115,32 @@ def make_token_windows(trajectories, quant: MeanScaleQuantizer, ctx: int,
     """trajectories: list of (T, m) arrays.  Each channel of each trajectory is
     an independent univariate series (Chronos global-model regime).  Returns a
     (N, ctx+1) int64 array of token windows (context + next token)."""
-    wins = []
+    from numpy.lib.stride_tricks import sliding_window_view
+    
+    all_wins = []
     for traj in trajectories:
         T, m = traj.shape
-        for ch in range(m):
-            x = traj[:, ch]
-            s = quant.scale(x[:max(ctx, 8)])       # scale from an initial window
-            tok = quant.quantize(x, s)
-            for st in range(0, T - ctx - 1, stride):
-                wins.append(tok[st:st + ctx + 1])
-    W = np.asarray(wins, dtype=np.int64)
+        # Vectorized scale calculation across channels
+        s_arr = np.mean(np.abs(traj[:max(ctx, 8), :]), axis=0)
+        s_arr = np.where(s_arr > 1e-6, s_arr, 1.0)
+        
+        # Quantize all channels at once (traj.T is (m, T))
+        tok = quant.quantize(traj.T, s_arr)  # (m, T)
+        
+        # Vectorized sliding window
+        windows = sliding_window_view(tok, window_shape=ctx+1, axis=1) # (m, T-ctx, ctx+1)
+        
+        # Apply stride and reshape
+        max_start = T - ctx - 1
+        if max_start > 0:
+            strided_windows = windows[:, 0:max_start:stride, :]
+            all_wins.append(strided_windows.reshape(-1, ctx+1))
+            
+    if len(all_wins) > 0:
+        W = np.concatenate(all_wins, axis=0)
+    else:
+        W = np.empty((0, ctx+1), dtype=np.int64)
+        
     if rng is not None:
         rng.shuffle(W)
     return W
@@ -133,9 +157,15 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
     X = _long(windows).to(device)
     n = X.shape[0]
     lossfn = nn.CrossEntropyLoss()
+    
     import time
+    import matplotlib.pyplot as plt
+    import os
     last_print_time = time.time()
     model.train()
+    
+    epoch_losses = []
+    
     for ep in range(epochs):
         perm = torch.randperm(n, device=device)
         tot = 0.0
@@ -156,7 +186,22 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
                 last_print_time = current_time
                 
         if verbose:
-            print(f"    epoch {ep + 1}/{epochs}  CE = {tot / n:.4f} nats")
+            epoch_loss = tot / (n + 1e-5)
+            print(f"    epoch {ep + 1}/{epochs}  CE = {epoch_loss:.4f} nats")
+            epoch_losses.append(epoch_loss)
+            
+            # Save the training loss plot
+            plt.figure(figsize=(8, 4))
+            plt.plot(range(1, len(epoch_losses) + 1), epoch_losses, marker='o', linestyle='-', color='b')
+            plt.title("Training Loss Over Epochs")
+            plt.xlabel("Epoch")
+            plt.ylabel("Cross-Entropy Loss (nats)")
+            plt.grid(True)
+            plt.tight_layout()
+            out_path = os.path.join(os.path.dirname(__file__), 'tsfm_training_loss.png')
+            plt.savefig(out_path)
+            plt.close()
+            
     model.eval()
     return model
 
