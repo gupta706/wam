@@ -3,6 +3,7 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 # Add the wam directory to the path so we can import from environment
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -86,13 +87,12 @@ def generate_ks_corpus(n_traj, T, seed=42):
         trajectories = list(executor.map(_ks_worker, args_list))
     return trajectories
 
-def evaluate_model(name, model, quant, test_traj):
+def evaluate_model(name, model, quant, test_traj, H):
     print(f"\n--- Evaluating TSFM on {name} ---")
     
     # Evaluate by forecasting one channel
     O = test_traj[0]
     ctxlen = model.ctx
-    H = 100
     test_channel = 0
     context = O[:ctxlen, test_channel]
     truth = O[ctxlen:ctxlen + H, test_channel]
@@ -140,28 +140,35 @@ def load_or_generate(name, N, T, seed, generate_fn):
         return data
 
 def main():
-    N = 400
-    M = 50
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+        
+    N = config["N"]
+    M = config["M"]
+    T = config["T"]
+    seeds = config["seeds"]
+    
     print("\n--- Processing LQG data ---")
-    lqg_train = load_or_generate("lqg_train", N, 700, 10, generate_lqg_corpus)
-    lqg_test = load_or_generate("lqg_test", M, 700, 99, generate_lqg_corpus)
+    lqg_train = load_or_generate("lqg_train", N, T, seeds["lqg_train"], generate_lqg_corpus)
+    lqg_test = load_or_generate("lqg_test", M, T, seeds["lqg_test"], generate_lqg_corpus)
     
     print("\n--- Processing Kuramoto data ---")
-    kur_train = load_or_generate("kur_train", N, 700, 20, generate_kuramoto_corpus)
-    kur_test = load_or_generate("kur_test", M, 700, 199, generate_kuramoto_corpus)
+    kur_train = load_or_generate("kur_train", N, T, seeds["kur_train"], generate_kuramoto_corpus)
+    kur_test = load_or_generate("kur_test", M, T, seeds["kur_test"], generate_kuramoto_corpus)
     
     print("\n--- Processing Stuart-Landau data ---")
-    sl_train = load_or_generate("sl_train", N, 700, 30, generate_stuart_landau_corpus)
-    sl_test = load_or_generate("sl_test", M, 700, 299, generate_stuart_landau_corpus)
+    sl_train = load_or_generate("sl_train", N, T, seeds["sl_train"], generate_stuart_landau_corpus)
+    sl_test = load_or_generate("sl_test", M, T, seeds["sl_test"], generate_stuart_landau_corpus)
     
     print("\n--- Processing Kuramoto-Sivashinsky data ---")
-    ks_train = load_or_generate("ks_train", N, 700, 40, generate_ks_corpus)
-    ks_test = load_or_generate("ks_test", M, 700, 399, generate_ks_corpus)
+    ks_train = load_or_generate("ks_train", N, T, seeds["ks_train"], generate_ks_corpus)
+    ks_test = load_or_generate("ks_test", M, T, seeds["ks_test"], generate_ks_corpus)
 
     print("\n--- Combining datasets for Unified Training ---")
-    B = 4096
-    ctx = 512
-    stride = 8
+    B = config["B"]
+    ctx = config["ctx"]
+    stride = config["stride"]
     quant = MeanScaleQuantizer(B=B)
     
     tokenized_path = f"data/Wtr_unified_N{N}_B{B}_ctx{ctx}_stride{stride}.npy"
@@ -187,12 +194,13 @@ def main():
         np.save(tokenized_path, Wtr)
     
     print("\n--- Training Unified Foundation Model ---")
-    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=30, d_model=256, n_layer=10, batch=32, verbose=True, seed=0)
+    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=config["epochs"], d_model=config["d_model"], n_layer=config["n_layer"], batch=config["batch"], verbose=True, seed=seeds["model_train"])
     
-    evaluate_model("LQG", model, quant, lqg_test)
-    evaluate_model("Kuramoto", model, quant, kur_test)
-    evaluate_model("Stuart-Landau", model, quant, sl_test)
-    evaluate_model("Kuramoto-Sivashinsky", model, quant, ks_test)
+    H = config["H"]
+    evaluate_model("LQG", model, quant, lqg_test, H)
+    evaluate_model("Kuramoto", model, quant, kur_test, H)
+    evaluate_model("Stuart-Landau", model, quant, sl_test, H)
+    evaluate_model("Kuramoto-Sivashinsky", model, quant, ks_test, H)
 
 if __name__ == "__main__":
     main()
