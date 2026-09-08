@@ -11,8 +11,13 @@ __pycache__/
 
 # Visualization Outputs
 *.jpg
-*.pdf
+
 
 # macOS
 .DS_Store
 data/
+
+# tex files
+*.log
+*.aux
+*.out
