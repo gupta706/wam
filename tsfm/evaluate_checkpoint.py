@@ -29,7 +29,9 @@ def evaluate_model(name, model, quant, test_traj, H, out_dir):
     truth = O[ctxlen:ctxlen + H_actual, test_channel]
     
     print(f"Forecasting {H_actual} steps ahead...")
-    fc = forecast_channel(model, quant, context, H=H_actual, n_samples=30)
+    # Use a low temperature (0.1) to make the categorical sampling nearly deterministic,
+    # preventing harsh random jumps that make the physical trajectories look disconnected.
+    fc = forecast_channel(model, quant, context, H=H_actual, n_samples=30, temperature=0.1)
     pred_mean = fc.mean(0)
     
     rmse = np.sqrt(np.mean((pred_mean - truth)**2))
