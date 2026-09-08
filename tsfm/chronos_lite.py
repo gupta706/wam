@@ -98,7 +98,7 @@ class TinyTSLM(nn.Module):
         self.blocks = nn.TransformerEncoder(layer, num_layers=n_layer)
         self.ln = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, B)
-        mask = torch.triu(torch.ones(ctx, ctx) * float("-inf"), diagonal=1)
+        mask = nn.Transformer.generate_square_subsequent_mask(ctx)
         self.register_buffer("attn_mask", mask)
 
     def forward(self, idx: torch.Tensor) -> torch.Tensor:
@@ -106,7 +106,8 @@ class TinyTSLM(nn.Module):
         B_, L = idx.shape
         pos = torch.arange(L, device=idx.device)
         h = self.tok(idx) + self.pos(pos)[None]
-        h = self.blocks(h, mask=self.attn_mask[:L, :L])
+        # Pass BOTH mask and is_causal=True for PyTorch 2.1+ compliance
+        h = self.blocks(h, mask=self.attn_mask[:L, :L], is_causal=True)
         return self.head(self.ln(h))          # (batch, L, B) logits
 
 
@@ -151,6 +152,7 @@ def make_token_windows(trajectories, quant: MeanScaleQuantizer, ctx: int,
 
 def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
                d_model: int = 64, n_layer: int = 2, batch: int = 256,
+               max_batches: int = None,
                lr: float = 3e-3, seed: int = 0, verbose: bool = False):
     """Train the tiny TS language model by cross-entropy next-token loss."""
     torch.manual_seed(seed)
@@ -173,20 +175,35 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
         perm = torch.randperm(n) # CPU permutation
         tot = 0.0
         for i in range(0, n, batch):
+            if max_batches is not None and (i // batch) >= max_batches:
+                break
+            # Safely get indices as numpy array to prevent memory leaks when indexing
+            batch_indices = perm[i:i + batch].numpy()
+            idx_np = windows[batch_indices]
+            
             # Move only the minibatch to the GPU
-            idx = torch.tensor(windows[perm[i:i + batch]], dtype=torch.long, device=device)
+            idx = torch.tensor(idx_np, dtype=torch.long, device=device)
             inp, tgt = idx[:, :-1], idx[:, 1:]
             logits = model(inp)
             loss = lossfn(logits.reshape(-1, B), tgt.reshape(-1))
-            opt.zero_grad(); loss.backward()
+            
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
-            tot += float(loss) * idx.shape[0]
+            
+            batch_loss = float(loss)
+            tot += batch_loss * idx.shape[0]
+            
+            # Explicitly free memory to prevent Mac swap thrashing
+            del idx, inp, tgt, logits, loss
+            if torch.backends.mps.is_available() and (i // batch) % 100 == 0:
+                torch.mps.empty_cache()
             
             if verbose and (i // batch) % 20 == 0:
                 current_time = time.time()
                 elapsed = current_time - last_print_time
-                print(f"      Batch {i // batch + 1}/{(n + batch - 1) // batch}, Current Loss: {loss.item():.4f}, Time: {elapsed:.2f}s")
+                print(f"      Batch {i // batch + 1}/{(n + batch - 1) // batch}, Current Loss: {batch_loss:.4f}, Time: {elapsed:.2f}s")
                 last_print_time = current_time
                 
         if verbose:
@@ -205,6 +222,13 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
             out_path = os.path.join(os.path.dirname(__file__), 'tsfm_training_loss.png')
             plt.savefig(out_path)
             plt.close()
+            
+            # Save model checkpoint
+            ckpt_dir = os.path.join(os.path.dirname(__file__), 'checkpoints')
+            os.makedirs(ckpt_dir, exist_ok=True)
+            ckpt_path = os.path.join(ckpt_dir, f'tsfm_model_epoch_{ep+1}.pt')
+            torch.save(model.state_dict(), ckpt_path)
+            print(f"      Saved checkpoint to {ckpt_path}")
             
     model.eval()
     return model

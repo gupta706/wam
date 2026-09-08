@@ -100,7 +100,7 @@ def main():
         np.save(tokenized_path, Wtr)
     
     print("\n--- Training Unified Foundation Model ---")
-    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=config["epochs"], d_model=config["d_model"], n_layer=config["n_layer"], batch=config["batch"], verbose=True, seed=seeds.get("model_train", 0))
+    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=config["epochs"], d_model=config["d_model"], n_layer=config["n_layer"], batch=config["batch"], max_batches=config.get("max_batches"), verbose=True, seed=seeds.get("model_train", 0))
     
     H = config["H"]
     for sys_name in SYSTEMS_REGISTRY.keys():
