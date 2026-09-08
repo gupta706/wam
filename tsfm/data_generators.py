@@ -12,6 +12,12 @@ from environment.stuart_landau import create_stuart_landau_params, stuart_landau
 from environment.kuramoto_sivashinsky import create_ks_params, get_initial_conditions_ks, integrate_ks
 from environment.lorenz96 import create_lorenz96_params, lorenz96_derivative, get_initial_conditions as get_ic_lor
 from environment.integrators import build_integrator
+import json
+
+config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+with open(config_path, 'r') as f:
+    config = json.load(f)
+STATE_DIM = config.get("state_dim", 5)
 
 # ==========================================
 # 1. Standardized Worker Wrappers
@@ -25,7 +31,7 @@ def _kuramoto_worker(args):
     T, params, dt, save_every, t_span, seed = args
     integrate = build_integrator(kuramoto_derivative, dt, save_every=save_every)
     np.random.seed(seed)
-    y0 = get_ic_kuramoto(200, key_seed=seed)
+    y0 = get_ic_kuramoto(STATE_DIM, key_seed=seed)
     _, traj = integrate(y0, t_span, params)
     return traj[:T] % (2*np.pi)
 
@@ -33,13 +39,13 @@ def _sl_worker(args):
     T, params, dt, save_every, t_span, seed = args
     integrate = build_integrator(stuart_landau_derivative, dt, save_every=save_every)
     np.random.seed(seed)
-    y0 = get_ic_sl(200, key_seed=seed)
+    y0 = get_ic_sl(STATE_DIM, key_seed=seed)
     _, traj = integrate(y0, t_span, params)
     return np.real(traj[:T])
 
 def _ks_worker(args):
     T, params, dt, save_every, t_span, seed = args
-    y0_hat = get_initial_conditions_ks(200, key_seed=seed)
+    y0_hat = get_initial_conditions_ks(STATE_DIM, key_seed=seed)
     _, traj_hat = integrate_ks(y0_hat, t_span, params, dt=dt, save_every=save_every)
     traj = np.real(np.fft.ifft(traj_hat, axis=1))
     return traj[:T]
@@ -55,11 +61,11 @@ def _lorenz96_worker(args):
 # ==========================================
 # 2. Parameter Creators
 # ==========================================
-def _get_lqg_params(seed): return create_lqg_params(key_seed=seed)
-def _get_kuramoto_params(seed): return create_kuramoto_params(key_seed=seed)
-def _get_sl_params(seed): return create_stuart_landau_params(key_seed=seed)
-def _get_ks_params(seed): return create_ks_params(N=200, L=22.0)
-def _get_lor96_params(seed): return create_lorenz96_params(N=40, F=8.0, key_seed=seed)
+def _get_lqg_params(seed): return create_lqg_params(K=STATE_DIM, m=STATE_DIM, key_seed=seed)
+def _get_kuramoto_params(seed): return create_kuramoto_params(n_oscillators=STATE_DIM, n_populations=1, key_seed=seed)
+def _get_sl_params(seed): return create_stuart_landau_params(n_oscillators=STATE_DIM, n_clusters=1, key_seed=seed)
+def _get_ks_params(seed): return create_ks_params(N=STATE_DIM)
+def _get_lor96_params(seed): return create_lorenz96_params(N=STATE_DIM, F=8.0, key_seed=seed)
 
 
 # ==========================================
@@ -130,12 +136,14 @@ def generate_corpus(system_name, n_traj, T, seed=42):
         
     return trajectories
 
-def load_or_generate(sys_name, file_prefix, N, T, seed):
+def load_or_generate(sys_name, data_key, N, T, seed):
     """
     Helper function to load data from disk if it exists, or generate and save it if not.
     """
-    os.makedirs("data", exist_ok=True)
-    file_path = f"data/{file_prefix}_{N}_{T}_{seed}.npy"
+    cache_dir = os.path.join(os.path.dirname(__file__), 'data')
+    os.makedirs(cache_dir, exist_ok=True)
+    
+    file_path = os.path.join(cache_dir, f"{data_key}_{N}_{T}_{seed}_dim{STATE_DIM}.npy")
     if os.path.exists(file_path):
         print(f"  Loading {sys_name} from {file_path}...")
         return list(np.load(file_path, allow_pickle=True))
