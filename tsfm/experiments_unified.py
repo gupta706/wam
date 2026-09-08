@@ -1,4 +1,3 @@
-import concurrent.futures
 import os
 import sys
 import numpy as np
@@ -8,84 +7,8 @@ import json
 # Add the wam directory to the path so we can import from environment
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from environment.lqg import create_lqg_params, simulate_lqg
-from environment.kuramoto import create_kuramoto_params, kuramoto_derivative, get_initial_conditions
-from environment.stuart_landau import create_stuart_landau_params, stuart_landau_derivative, get_initial_conditions as get_initial_conditions_sl
-from environment.kuramoto_sivashinsky import create_ks_params, get_initial_conditions_ks, integrate_ks
-from environment.integrators import build_integrator
 from tsfm.chronos_lite import MeanScaleQuantizer, make_token_windows, train_tslm, forecast_channel
-
-def _lqg_worker(args):
-    T, params, seed = args
-    _, _, obs = simulate_lqg(T, params, key_seed=seed)
-    return obs
-
-def generate_lqg_corpus(n_traj, T, seed=42):
-    """Generate n_traj trajectories of length T from the LQG system."""
-    params = create_lqg_params(key_seed=seed)
-    args_list = [(T, params, seed + i) for i in range(n_traj)]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        trajectories = list(executor.map(_lqg_worker, args_list))
-    return trajectories
-
-def _kuramoto_worker(args):
-    T, params, dt, save_every, t_span, seed = args
-    integrate = build_integrator(kuramoto_derivative, dt, save_every=save_every)
-    np.random.seed(seed)
-    y0 = get_initial_conditions(200, key_seed=seed)
-    _, traj = integrate(y0, t_span, params)
-    return traj[:T] % (2*np.pi)
-
-def generate_kuramoto_corpus(n_traj, T, seed=42):
-    """Generate n_traj trajectories of length T from the Kuramoto system."""
-    params = create_kuramoto_params(key_seed=seed)
-    dt = 0.05
-    save_every = 2
-    t_span = (0.0, dt * T * save_every)
-    
-    args_list = [(T, params, dt, save_every, t_span, seed + i) for i in range(n_traj)]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        trajectories = list(executor.map(_kuramoto_worker, args_list))
-    return trajectories
-
-def _sl_worker(args):
-    T, params, dt, save_every, t_span, seed = args
-    integrate = build_integrator(stuart_landau_derivative, dt, save_every=save_every)
-    np.random.seed(seed)
-    y0 = get_initial_conditions_sl(200, key_seed=seed)
-    _, traj = integrate(y0, t_span, params)
-    return np.real(traj[:T])
-
-def generate_stuart_landau_corpus(n_traj, T, seed=42):
-    """Generate n_traj trajectories of length T from the Stuart-Landau system."""
-    params = create_stuart_landau_params(key_seed=seed)
-    dt = 0.05
-    save_every = 2
-    t_span = (0.0, dt * T * save_every)
-    
-    args_list = [(T, params, dt, save_every, t_span, seed + i) for i in range(n_traj)]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        trajectories = list(executor.map(_sl_worker, args_list))
-    return trajectories
-
-def _ks_worker(args):
-    T, params, dt, save_every, t_span, seed = args
-    y0_hat = get_initial_conditions_ks(200, key_seed=seed)
-    _, traj_hat = integrate_ks(y0_hat, t_span, params, dt=dt, save_every=save_every)
-    traj = np.real(np.fft.ifft(traj_hat, axis=1))
-    return traj[:T]
-
-def generate_ks_corpus(n_traj, T, seed=42):
-    """Generate n_traj trajectories of length T from the Kuramoto-Sivashinsky system."""
-    params = create_ks_params(N=200, L=22.0)
-    dt = 0.001
-    save_every = 50
-    t_span = (0.0, dt * save_every * T)
-    
-    args_list = [(T, params, dt, save_every, t_span, seed + i) for i in range(n_traj)]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        trajectories = list(executor.map(_ks_worker, args_list))
-    return trajectories
+from tsfm.data_generators import SYSTEMS_REGISTRY, load_or_generate
 
 def evaluate_model(name, model, quant, test_traj, H):
     print(f"\n--- Evaluating TSFM on {name} ---")
@@ -127,17 +50,6 @@ def evaluate_model(name, model, quant, test_traj, H):
     print(f"Saved forecast plot to {out_path}")
     plt.close()
 
-def load_or_generate(name, N, T, seed, generate_fn):
-    os.makedirs("data", exist_ok=True)
-    file_path = f"data/{name}_{N}_{T}_{seed}.npy"
-    if os.path.exists(file_path):
-        print(f"  Loading {name} from {file_path}...")
-        return list(np.load(file_path, allow_pickle=True))
-    else:
-        print(f"  Generating {name}...")
-        data = generate_fn(N, T, seed=seed)
-        np.save(file_path, np.array(data))
-        return data
 
 def main():
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -149,22 +61,19 @@ def main():
     T = config["T"]
     seeds = config["seeds"]
     
-    print("\n--- Processing LQG data ---")
-    lqg_train = load_or_generate("lqg_train", N, T, seeds["lqg_train"], generate_lqg_corpus)
-    lqg_test = load_or_generate("lqg_test", M, T, seeds["lqg_test"], generate_lqg_corpus)
+    train_data = {}
+    test_data = {}
     
-    print("\n--- Processing Kuramoto data ---")
-    kur_train = load_or_generate("kur_train", N, T, seeds["kur_train"], generate_kuramoto_corpus)
-    kur_test = load_or_generate("kur_test", M, T, seeds["kur_test"], generate_kuramoto_corpus)
-    
-    print("\n--- Processing Stuart-Landau data ---")
-    sl_train = load_or_generate("sl_train", N, T, seeds["sl_train"], generate_stuart_landau_corpus)
-    sl_test = load_or_generate("sl_test", M, T, seeds["sl_test"], generate_stuart_landau_corpus)
-    
-    print("\n--- Processing Kuramoto-Sivashinsky data ---")
-    ks_train = load_or_generate("ks_train", N, T, seeds["ks_train"], generate_ks_corpus)
-    ks_test = load_or_generate("ks_test", M, T, seeds["ks_test"], generate_ks_corpus)
-
+    for sys_name, sys_info in SYSTEMS_REGISTRY.items():
+        prefix = sys_info["prefix"]
+        
+        print(f"\n--- Processing {sys_name} data ---")
+        train_key = f"{prefix}_train"
+        test_key = f"{prefix}_test"
+        
+        train_data[sys_name] = load_or_generate(sys_name, train_key, N, T, seeds.get(train_key, 42))
+        test_data[sys_name] = load_or_generate(sys_name, test_key, M, T, seeds.get(test_key, 42))
+        
     print("\n--- Combining datasets for Unified Training ---")
     B = config["B"]
     ctx = config["ctx"]
@@ -178,29 +87,24 @@ def main():
         print(f"\nTotal Combined Training Windows: {len(Wtr)}")
     else:
         print("Tokenizing training trajectories...")
-        w_lqg = make_token_windows(lqg_train, quant, ctx, stride=stride)
-        print(f"  LQG tokens: {len(w_lqg)}")
-        w_kur = make_token_windows(kur_train, quant, ctx, stride=stride)
-        print(f"  Kuramoto tokens: {len(w_kur)}")
-        w_sl = make_token_windows(sl_train, quant, ctx, stride=stride)
-        print(f"  Stuart-Landau tokens: {len(w_sl)}")
-        w_ks = make_token_windows(ks_train, quant, ctx, stride=stride)
-        print(f"  Kuramoto-Sivashinsky tokens: {len(w_ks)}")
-        
-        Wtr = np.concatenate([w_lqg, w_kur, w_sl, w_ks], axis=0)
+        windows = []
+        for sys_name in SYSTEMS_REGISTRY.keys():
+            w = make_token_windows(train_data[sys_name], quant, ctx, stride=stride)
+            print(f"  {sys_name} tokens: {len(w)}")
+            windows.append(w)
+            
+        Wtr = np.concatenate(windows, axis=0)
         np.random.shuffle(Wtr)
         print(f"\nTotal Combined Training Windows: {len(Wtr)}")
         print(f"Saving tokenized trajectories to {tokenized_path}...")
         np.save(tokenized_path, Wtr)
     
     print("\n--- Training Unified Foundation Model ---")
-    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=config["epochs"], d_model=config["d_model"], n_layer=config["n_layer"], batch=config["batch"], verbose=True, seed=seeds["model_train"])
+    model = train_tslm(Wtr, B=B, ctx=ctx, epochs=config["epochs"], d_model=config["d_model"], n_layer=config["n_layer"], batch=config["batch"], verbose=True, seed=seeds.get("model_train", 0))
     
     H = config["H"]
-    evaluate_model("LQG", model, quant, lqg_test, H)
-    evaluate_model("Kuramoto", model, quant, kur_test, H)
-    evaluate_model("Stuart-Landau", model, quant, sl_test, H)
-    evaluate_model("Kuramoto-Sivashinsky", model, quant, ks_test, H)
+    for sys_name in SYSTEMS_REGISTRY.keys():
+        evaluate_model(sys_name, model, quant, test_data[sys_name], H)
 
 if __name__ == "__main__":
     main()

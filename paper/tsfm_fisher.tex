@@ -90,12 +90,34 @@
 \newcommand{\WAM}{\textsc{wam}}
 \newcommand{\VLA}{\textsc{vla}}
 \newcommand{\Chronos}{\textsc{chronos}}
+%----- chaos / dynamical-systems macros -----
+\newcommand{\attr}{\mathcal{A}}
+\newcommand{\Msp}{\mathcal{M}}
+\newcommand{\srb}{\mu}
+\newcommand{\hKS}{h_{\mathrm{KS}}}
+\newcommand{\DKY}{D_{\mathrm{KY}}}
+\newcommand{\Eu}{E^{u}}
+\newcommand{\Ec}{E^{c}}
+\newcommand{\Es}{E^{s}}
+\newcommand{\boxdim}{\dim_{B}}
+\newcommand{\Wass}{\mathcal{W}_1}
+\DeclareMathOperator{\Lip}{Lip}
 \allowdisplaybreaks
+%----- graceful figure fallback: a figure file that is not bundled with the
+%      source degrades to a labelled placeholder box instead of aborting the
+%      build (keeps the manuscript compilable in isolation) -----
+\usepackage{xparse}
+\let\wamOrigIncludegraphics\includegraphics
+\RenewDocumentCommand{\includegraphics}{O{}m}{%
+  \IfFileExists{#2}{\wamOrigIncludegraphics[#1]{#2}}{%
+    \fbox{\parbox[c][2.6cm][c]{.86\linewidth}{\centering\ttfamily\scriptsize
+      [figure not bundled with source]\\[2pt]\detokenize{#2}}}}}
 
 \begin{document}
 \title{\bfseries Time-Series Foundation Models as
 Approximate-Information-State World Models:\\[3pt]
-\large A Fisher-Information Theory of Stability, Observability, and Learnability}
+\large A Fisher-Information Theory of Stability, Observability, Learnability,
+and Chaotic Predictability}
 \author{\normalsize (fusing the world-action / vision--language--action Fisher
 theory with the \Chronos\ time-series foundation model,\\[-1pt]
 \normalsize on the approximate-information-state framework of Subramanian,
@@ -137,7 +159,28 @@ exactly as many null directions as unobserved modes, its per-mode information
 tracks $1/(1-r^2)$ to a log--log correlation of $0.97$, $\lambda_{\max}$ scales
 as $1/(1-\rho)$, and a trained \Chronos-lite model's forecast skill rises with
 stability and tracks $\log\det\Ith$, while sloppy directions are learned last in
-exact proportion to their Fisher eigenvalue. The common theme: world modeling,
+exact proportion to their Fisher eigenvalue. Beyond the linear regime we develop
+the mathematics of forecasting \emph{chaotic} systems and route it through the
+same information-state latent. On a corpus of five dynamical systems---a stable
+modal LQG process and four nonlinear oscillator/field models (multi-population
+Kuramoto, cluster Stuart--Landau, Kuramoto--Sivashinsky, and Lorenz--96)---we
+prove that the transformer context is a \emph{delay-embedding} approximate
+information state whose intrinsic dimension is the \emph{attractor's}, not the
+ambient $n$ (Takens), which is why a modest-context model forecasts a nominally
+$200$-dimensional system; that the forecast horizon of \emph{any} model is capped
+at the Lyapunov time $\tau_\star\asymp\lambda_1^{-1}\log(1/\sigma_v)$; that a
+filter/AIS tracks the state with bounded error iff it observes the unstable
+subspace, so a low-dimensional sensor on a high-dimensional chaos (we measure
+$n_+\!=\!13$ positive exponents and Kaplan--Yorke dimension $\DKY\!\approx\!27$
+for Lorenz--96) is \emph{dynamically} sensor-limited; and that the
+Kolmogorov--Sinai entropy $\hKS=\sum_{\lambda_i>0}\lambda_i$ lower-bounds the
+tokenizer information rate $m\log B$ (Pesin). This places the linear theory as one
+pole of a single axis: the top Lyapunov exponent $\lambda_1=\log\rho$---which our
+five systems sweep from $-0.105$ (LQG, contracting) through $\approx0$
+(synchronized oscillators) to $+1.68$ (Lorenz--96)---is the master dial, and the
+parameter-information blow-up $1/(1-r^2)$ and the predictability horizon
+$1/\lambda_1$ are the \emph{same} $1/|\lambda_1|$ singularity approached from the
+stable and chaotic sides of the unit circle. The common theme: world modeling,
 instruction-conditioned control, and time-series forecasting are three channels
 of one process measured by one Fisher matrix whose spectrum is written by
 dynamics.
@@ -146,11 +189,14 @@ dynamics.
 \begin{center}\small
 \textbf{Key words.} time-series foundation models, world models, Fisher
 information, approximate information state, system identification, stability
-margin, observability, Cram\'er--Rao bound, sloppy models, Chronos
+margin, observability, Cram\'er--Rao bound, sloppy models, Chronos, chaotic
+dynamics, Lyapunov exponents, Takens delay embedding, predictability horizon,
+Kolmogorov--Sinai entropy, data assimilation, Kuramoto--Sivashinsky, Lorenz--96
 \end{center}
 \begin{center}\small
 \textbf{AMS subject classifications.}
-62M10, 62B10, 93E12, 93B07, 93B30, 68T07, 62M20, 93E11
+62M10, 62B10, 93E12, 93B07, 93B30, 68T07, 62M20, 93E11,
+37M25, 37D45, 37A35, 37N30, 60G25
 \end{center}
 \bigskip\hrule\bigskip
 
@@ -352,6 +398,25 @@ modes last, and aggregate skill tracks $\log\det\Ith$ (\cref{prop:learn}).
 Covariate/exogenous-input forecasting re-introduces an action-like channel and
 with it the policy block and the occupancy coupling of~\cite{wamvla}, locating
 covariate \TSFM s back in the full two-block theory (\cref{prop:covariate}).
+\item \textbf{The model zoo, made explicit (\cref{sec:zoo}).} We document the
+generative corpus---a stable modal LQG process and four nonlinear
+oscillator/field systems (multi-population Kuramoto, cluster Stuart--Landau,
+Kuramoto--Sivashinsky, Lorenz--96)---giving each system's exact transition
+structure and every hyperparameter, alongside the \Chronos-lite architecture and
+training recipe, so the theory below is anchored to reproducible objects
+(\cref{tab:zoo,tab:hyper,tab:tsfmarch}).
+\item \textbf{Chaotic predictability and the information state
+(\cref{sec:chaos}).} We extend the theory past the linear--Gaussian regime. We
+prove that a \TSFM's context is a \emph{delay-embedding} AIS whose dimension is
+the attractor's (Takens; \cref{thm:takens}); that the forecast horizon of any
+model is the Lyapunov time $\tau_\star\asymp\lambda_1^{-1}\log(1/\sigma_v)$
+(\cref{thm:horizon}); that bounded state tracking requires observing the unstable
+subspace, giving a \emph{dynamic} observability ceiling (\cref{thm:unstable});
+that $\hKS=\sum_{\lambda_i>0}\lambda_i$ lower-bounds the tokenizer rate $m\log B$
+(Pesin; \cref{prop:pesin}); and that the whole paper is one axis in the top
+Lyapunov exponent, with $1/(1-r^2)$ and $1/\lambda_1$ the two sides of the
+$\lambda_1\!\to\!0$ singularity (\cref{prop:master}). We measure the Lyapunov
+spectra of the corpus to instantiate every constant.
 \item \textbf{A large numerical study (\cref{sec:experiments}).} On a stable LQG
 system with $n=200$ states and $m=100$ observations we confirm all of the above,
 including a trained \Chronos-lite whose forecast skill is predicted by the FIM.
@@ -372,7 +437,20 @@ the time-series instance of sloppy-model
 theory~\cite{transtrum2015,gutenkunst2007}. Observability and the
 parameter-sensitivity Gramian are standard in
 identification~\cite{ljung1999,bellman1970}; our contribution is to read the
-small Fisher eigenvectors of a \emph{foundation model} through them.
+small Fisher eigenvectors of a \emph{foundation model} through them. The chaotic
+half of the paper rests on classical dynamical-systems theory: the delay-embedding
+theorems of Takens~\cite{takens1981} and Sauer--Yorke--Casdagli~\cite{sauer1991},
+the multiplicative ergodic theorem of Oseledets~\cite{oseledets1968}, Pesin's
+entropy formula and its SRB extension~\cite{pesin1977,ledrappieryoung1985,%
+young2002}, the Kaplan--Yorke dimension~\cite{kaplanyorke1979}, and the
+predictability limits of chaotic forecasting~\cite{lorenz1963,lorenz1996}. That a
+filter need only control the unstable subspace is the ``assimilation in the
+unstable subspace'' principle of Trevisan--Palatella and
+Bocquet--Carrassi--Grudzien and co-authors~\cite{trevisan2011,bocquet2017,%
+gurumoorthy2017}; recent learning-theoretic work links forecasting skill on
+chaotic systems to the Lyapunov time~\cite{pathak2018}. We connect this apparatus
+to the \emph{information state} of a foundation model and to the same tangent-%
+filter Fisher object that governs the linear theory.
 
 \section{A Time-Series Foundation Model is an Autonomous World Model}
 \label{sec:model}
@@ -754,6 +832,551 @@ co-design of~\cite[\S6]{wamvla}). Stability and observability govern $\Ith$ in
 all three; what the covariate/control adds is the occupancy that \emph{sizes}
 $\Ith$, and its own identifiability $\Iph$.
 
+\section{The Model Zoo: Transition Structures and Hyperparameters}
+\label{sec:zoo}
+
+The theory of the previous sections, and the chaotic theory of the next, are
+anchored to a concrete corpus. We generate time-series data from five
+environments chosen to \emph{sweep the stability-to-chaos axis}: a stable linear
+Gaussian process and four nonlinear oscillator/field systems whose top Lyapunov
+exponents (measured in \cref{sec:chaos}) run from contracting through neutral to
+strongly positive. Each environment is the time-$\Delta$ sampling of a (stochastic
+or deterministic) dynamical system on $\R^N$; a \TSFM\ sees only the observation
+series $o_t=g(x_t)+(\text{noise})$. \Cref{tab:zoo} collects the transition
+structures, \cref{tab:hyper} every hyperparameter, and \cref{tab:tsfmarch} the
+\Chronos-lite recipe. All values are those in the accompanying code
+(\texttt{environment/} and \texttt{tsfm/}).
+
+\subsection{Generative environments}
+
+\paragraph{(E1) Modal LQG---linear--Gaussian, stable.}
+A partially observed linear system in real modal form,
+\begin{equation}
+ X_{t+1}=A X_t+W_t,\qquad O_t=C X_t+V_t,\qquad
+ W_t\sim\mathcal N(0,\sigma_w^2 I_n),\ V_t\sim\mathcal N(0,\sigma_v^2 I_m),
+ \label{eq:lqgzoo}
+\end{equation}
+with $A=\bigoplus_{j=1}^{K} r_j R(\omega_j)$ block-diagonal in $K$ damped
+oscillatory modes, $R(\omega)=\bigl(\begin{smallmatrix}\cos\omega &
+\sin\omega\\[-1pt] -\sin\omega & \cos\omega\end{smallmatrix}\bigr)$, so $n=2K$.
+Modal magnitudes $r_j$ are log-spaced in $[r_{\mathrm{lo}},\rho]$; the readout $C$
+has per-mode gain tilted toward the slow modes by $(r_j/\rho)^{\beta}$, and the
+$n_{\mathrm{h}}$ fastest modes are left \emph{unobserved} ($c_j=0$). Every
+Lyapunov exponent is $\log r_j<0$, so the system is globally contracting; this is
+the instance analyzed exactly in \crefrange{sec:model}{sec:learn} and
+\cref{sec:experiments}.
+
+\paragraph{(E2) Multi-population Kuramoto---coupled phase oscillators.}
+$N$ phases on the circle,
+\begin{equation}
+ \dot\theta_i=\omega_i+\sum_{j=1}^N K_{ij}\sin(\theta_j-\theta_i),\qquad
+ o_t=\theta_t\bmod 2\pi,
+ \label{eq:kur}
+\end{equation}
+with a block coupling $K_{ij}=\kappa_{\mathrm{intra}}/N$ inside each of $P$
+communities and $\kappa_{\mathrm{inter}}/N$ between them, and natural frequencies
+$\omega_i\sim\mathcal N(0,\varsigma^2)$. Strong intra-community coupling drives
+synchronization into $P$ clusters, collapsing the macroscopic dynamics onto a
+$\approx P$-dimensional manifold.
+
+\paragraph{(E3) Cluster Stuart--Landau---coupled Hopf oscillators.}
+$N$ complex amplitudes near a Hopf bifurcation,
+\begin{equation}
+ \dot z_i=(\lambda_i+i\omega_i)z_i-\abs{z_i}^2 z_i
+   +\sum_{j=1}^N K_{ij}(z_j-z_i),\qquad o_t=\Re\,z_t,
+ \label{eq:sl}
+\end{equation}
+$z_i\in\mathbb C$, with the same block coupling as (E2) over $P$ clusters,
+$\lambda_i\equiv\lambda>0$ and $\omega_i\sim\mathcal N(\bar\omega,\varsigma^2)$.
+Diffusive coupling synchronizes each cluster onto a common limit cycle, giving a
+$\approx P$-dimensional (quasi-)periodic attractor.
+
+\paragraph{(E4) Kuramoto--Sivashinsky---spatiotemporal chaos.}
+The scalar field $u(x,t)$ on $[0,L)$ with periodic boundaries,
+\begin{equation}
+ \partial_t u+u\,\partial_x u+\partial_x^2 u+\partial_x^4 u=0 ,
+ \label{eq:ks}
+\end{equation}
+discretized by a Fourier--Galerkin pseudo-spectral method on $N$ modes: with
+$\hat u_k$ the Fourier coefficients and $k$ the wavenumbers,
+$\partial_t\hat u_k=(k^2-k^4)\hat u_k-\tfrac{i k}{2}\widehat{u^2}_k$, advanced by
+the semi-implicit (IMEX) Euler step
+$\hat u_k^{+}=(1-\Delta(k^2-k^4))^{-1}\!\big(\hat u_k-\tfrac{i k}{2}\Delta\,
+\widehat{u^2}_k\big)$; the implicit treatment of the stiff $k^4$
+hyper-diffusion is what allows the coarse $\Delta$. The observation is the field
+on the grid, $o_t=u(\cdot,t)$. At $L=22$ the attractor is low-dimensional but
+chaotic.
+
+\paragraph{(E5) Lorenz--96---high-dimensional chaos.}
+$N$ sites on a ring with advective coupling and constant forcing,
+\begin{equation}
+ \dot y_i=(y_{i+1}-y_{i-2})\,y_{i-1}-y_i+F,\qquad i\in\mathbb Z/N\mathbb Z,\qquad
+ o_t=y_t,
+ \label{eq:lor96}
+\end{equation}
+at the canonical chaotic forcing $F=8$. Unlike (E2)--(E4) this system is
+\emph{not} designed to be low-dimensional: at $N=40,F=8$ it has many positive
+Lyapunov exponents (\cref{sec:chaos}), making it the stress test for the
+observability ceiling of \cref{thm:unstable}.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{5pt}\renewcommand{\arraystretch}{1.35}
+\caption{Transition structures of the five generative environments. ODE systems
+are advanced by classical RK4, the stiff PDE by IMEX Euler; the observation
+cadence is $\Delta_{\mathrm s}=\Delta\cdot S_{\mathrm{save}}$.}
+\label{tab:zoo}
+\begin{tabular}{@{}p{2.15cm}p{5.4cm}p{2.0cm}p{3.1cm}@{}}
+\toprule
+System & Transition / vector field & State & Regime (by $\lambda_1$)\\
+\midrule
+LQG (E1) & $X_{t+1}=AX_t+W_t,\ O_t=CX_t+V_t$, \newline $A=\bigoplus_j r_jR(\omega_j)$ & $\R^{n},\ n=2K$ & contracting, $\lambda_1<0$\\
+Kuramoto (E2) & $\dot\theta_i=\omega_i+\sum_j K_{ij}\sin(\theta_j-\theta_i)$ & $\mathbb T^{N}$ & synchronized, $\lambda_1\!\approx\!0^{+}$\\
+Stuart--Landau (E3) & $\dot z_i=(\lambda+i\omega_i)z_i-\abs{z_i}^2z_i+\sum_j K_{ij}(z_j-z_i)$ & $\mathbb C^{N}$ & limit cycle, $\lambda_1\!\approx\!0$\\
+KS (E4) & $\partial_t u=-u\partial_x u-\partial_x^2u-\partial_x^4u$ & $\R^{N}$ (grid) & low-dim chaos\\
+Lorenz--96 (E5) & $\dot y_i=(y_{i+1}-y_{i-2})y_{i-1}-y_i+F$ & $\R^{N}$ & high-dim chaos\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{4.5pt}\renewcommand{\arraystretch}{1.18}
+\caption{Environment hyperparameters (as configured in \texttt{environment/}).
+$\Delta$ is the integrator step, $S_{\mathrm{save}}$ the sub-sampling stride,
+$\Delta_{\mathrm s}=\Delta S_{\mathrm{save}}$ the observation spacing. The corpus
+uses $N_{\mathrm{tr}}=100$ training and $M_{\mathrm{te}}=10$ test trajectories of
+length $T=200$ per system.}
+\label{tab:hyper}
+\begin{tabular}{@{}lll@{}}
+\toprule
+System & Dimensions \& couplings & Integration\\
+\midrule
+LQG (E1) & $K{=}100$ modes, $n{=}200$, $m{=}100$; $\rho{=}0.90$, $r_{\mathrm{lo}}{=}0.15$; & $\Delta{=}1$, $S_{\mathrm{save}}{=}1$\\
+ & $\sigma_w{=}1.0$, $\sigma_v{=}0.1$; $n_{\mathrm h}{=}8$ hidden; gain $\in[0.4,1.0]$, $\beta{=}2.5$ & \\
+Kuramoto (E2) & $N{=}200$, $P{=}5$; $\kappa_{\mathrm{intra}}{=}5.0$, $\kappa_{\mathrm{inter}}{=}0.1$; $\omega\!\sim\!\mathcal N(0,0.5^2)$ & $\Delta{=}0.05$, $S_{\mathrm{save}}{=}2$\\
+Stuart--Landau (E3) & $N{=}200$, $P{=}7$; $\kappa_{\mathrm{intra}}{=}2.0$, $\kappa_{\mathrm{inter}}{=}0.05$; $\lambda{=}1$, $\omega\!\sim\!\mathcal N(2,0.2^2)$ & $\Delta{=}0.05$, $S_{\mathrm{save}}{=}2$\\
+KS (E4) & $N{=}200$ modes, domain $L{=}22.0$ & $\Delta{=}10^{-3}$, $S_{\mathrm{save}}{=}50$\\
+Lorenz--96 (E5) & $N{=}40$, forcing $F{=}8.0$ & $\Delta{=}0.01$, $S_{\mathrm{save}}{=}5$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tokenizer, backbone, and objective (\Chronos-lite)}
+A single \emph{univariate} foundation model is trained across all channels of all
+systems (the global-model regime). It follows the \Chronos\ recipe of
+\cref{sec:model} in three steps. \textbf{(i) Mean scaling and quantization.} For a
+context window $\mathbf c$, compute $s=\tfrac1{|\mathbf c|}\sum|c|$, scale
+$\tilde y=y/s$, and quantize into one of $B$ uniform bins over $[q_{\mathrm{lo}},
+q_{\mathrm{hi}}]$ in scaled space, $q_t=\mathrm{Quantize}(y_t/s;B)\in\{1,\dots,B\}$
+(the fixed, $\theta$-free channel of \cref{prop:quant}). \textbf{(ii)
+Windowing.} Slice each tokenized channel into length-$C$ contexts with stride $S$,
+paired with the next token. \textbf{(iii) Language-model objective.} A
+decoder-only Transformer $P_\theta$ over the $B$-symbol vocabulary is trained by
+next-token cross-entropy,
+\begin{equation}
+ \mathcal L(\theta)=-\,\E_{(\mathbf c_t,\,q_{t+1})\sim\mathcal D}
+   \big[\log P_\theta(q_{t+1}\mid \mathbf c_t)\big],\qquad
+ P_\theta(\cdot\mid\mathbf c_t)=\mathrm{Softmax}\big(\mathrm{head}(\mathbf h_C)\big),
+ \label{eq:ce}
+\end{equation}
+with $\mathbf h_C$ the final causal hidden state---the realized approximate
+information state (\cref{sec:ais}, and \cref{thm:takens} below). Forecasts are
+autoregressive token samples, de-quantized and un-scaled, or the categorical
+expected value (the minimum-MSE point forecast). \Cref{tab:tsfmarch} lists the
+architecture and optimizer settings; the exact-FIM study of \cref{sec:experiments}
+uses the smaller per-system variant noted there.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{5pt}\renewcommand{\arraystretch}{1.18}
+\caption{The \Chronos-lite tokenizer, backbone, and training recipe
+(\texttt{tsfm/chronos\_lite.py}, \texttt{tsfm/config.json}). The cross-system
+foundation model is the main configuration; the LQG-only Fisher study of
+\cref{sec:experiments} uses the compact variant.}
+\label{tab:tsfmarch}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Component & Cross-system model & LQG Fisher study\\
+\midrule
+Tokenizer & mean-scale $+$ uniform quantize & (same)\\
+Vocabulary $B$ & $256$ bins & $128$ bins\\
+Scaled range $[q_{\mathrm{lo}},q_{\mathrm{hi}}]$ & $[-6,6]$ & $[-6,6]$\\
+Context length $C$ & $32$ & $40$\\
+Window stride $S$ & $8$ & $8$\\
+Backbone & causal Transformer (decoder-only) & (same)\\
+Embedding $d_{\mathrm{model}}$ & $256$ & $64$\\
+Layers / heads & $2$ / $8$ & $2$ / $8$\\
+Feed-forward / act.\ & $4d_{\mathrm{model}}$ / GELU & $4d_{\mathrm{model}}$ / GELU\\
+Dropout, norm & $0.1$, LayerNorm & (same)\\
+Optimizer & AdamW, lr $3\!\times\!10^{-3}$, wd $10^{-4}$ & (same)\\
+Grad clip, batch, epochs & $1.0$, $32$, $30$ & $1.0$, $256$, $\sim\!6$\\
+Forecast & AR sampling ($30$ paths, $\tau{=}1$) / E-value & (same)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Chaotic Dynamics, the Information State, and Foundation-Model Predictability}
+\label{sec:chaos}
+
+The exact spectral theory of \crefrange{sec:stability}{sec:learn} is
+linear--Gaussian: it identifies a \emph{parameter} $\theta$ and its Fisher matrix
+is written by stability margins $1-r_j^2$. Four of the five environments of
+\cref{sec:zoo} are \emph{nonlinear}, and (E4)--(E5) are \emph{chaotic}. This
+section develops the mathematics a foundation model faces on such systems and
+threads it through the same approximate-information-state (AIS) latent. Three
+facts change relative to the linear case, and each is a theorem below: the
+sufficient statistic is a low-dimensional \emph{delay embedding} of the attractor
+rather than a Kalman mean (\cref{thm:takens}); forecast skill is bounded not by a
+sloppy spectrum but by a hard \emph{Lyapunov horizon} (\cref{thm:horizon}); and
+the observability null space becomes a \emph{dynamically diverging} subspace
+(\cref{thm:unstable}). A fourth result ties tokenization to the metric entropy
+(\cref{prop:pesin}), and a fifth shows the linear and chaotic theories are one
+axis in the top Lyapunov exponent (\cref{prop:master}).
+
+\subsection{The reward-free approximate information state}
+We first state, for self-containedness, the forecasting specialization of the
+AIS of Subramanian et al.~\cite{ais2022}. Let $\mathcal H_t=\sigma(O_{1:t})$ and
+let $d_{\Fc}$ be an integral probability metric generated by a function class
+$\Fc$ (Wasserstein-1 when $\Fc$ is $1$-Lipschitz).
+
+\begin{definition}[$(\eps,\delta)$-AIS for forecasting]\label{def:ais}
+A statistic $z_t=\sigma_t(O_{1:t})\in\Zs$ with predictive kernel $\hat
+P(\cdot\mid z)$ on $\Os$ and update $z_{t}=\psi(z_{t-1},O_t)$ is an
+\emph{$(\eps,\delta)$-approximate information state} if for all $t$:
+\textup{(AP1)} predictive sufficiency,
+$d_{\Fc}\big(\mathrm{Law}(O_{t+1}\mid\mathcal H_t),\,\hat P(\cdot\mid z_t)\big)
+\le\eps$; and \textup{(AP2)} recursive sufficiency,
+$d_{\Fc}\big(\mathrm{Law}(z_{t+1}\mid\mathcal H_t),\,\psi(z_t,\cdot)_\#\hat
+P(\cdot\mid z_t)\big)\le\delta$. It is \emph{exact} when $\eps=\delta=0$, i.e.\
+$z_t$ is a predictive sufficient statistic for the future.
+\end{definition}
+
+This is the reward-free reading of the AIS: the ``reward'' a forecaster must
+predict is the next observation itself, so predictive sufficiency for $O_{t+1}$
+replaces sufficiency for a reward. The \TSFM's context hidden state $\mathbf h_C$
+of \eqref{eq:ce} is a learned candidate $z_t$; the theorems below say what the
+\emph{ideal} $z_t$ is for a chaotic system and how large it must be.
+
+\subsection{Standing assumptions and the Lyapunov data of the corpus}
+
+\begin{assumption}[Chaotic regime]\label{ass:chaos}
+The observation series is the time-$\Delta$ sampling of a dissipative system: a
+$C^{1+\alpha}$ diffeomorphism $f:\Msp\to\Msp$ (the flow map on a
+finite-dimensional state space $\Msp\subseteq\R^n$; for the PDE, its
+Fourier--Galerkin truncation) with a compact attractor $\attr$ carrying an
+ergodic SRB measure $\srb$; observations $O_t=g(X_t)+V_t$ with $g\in C^1$ and
+$V_t\sim\mathcal N(0,\sigma_v^2 I_m)$ i.i.d. By Oseledets' multiplicative ergodic
+theorem~\cite{oseledets1968} the Lyapunov exponents
+$\lambda_1\ge\cdots\ge\lambda_n$ and the measurable splitting $T_x\Msp=
+\Eu(x)\oplus\Ec(x)\oplus\Es(x)$ (over $\lambda_i>0,=0,<0$) exist $\srb$-a.e.;
+write $n_+=\dim\Eu$, $n_0=\dim\Ec$. The system is \emph{chaotic} iff
+$\lambda_1>0$. Define the Kolmogorov--Sinai entropy $\hKS(\srb)$ and the
+Kaplan--Yorke dimension $\DKY=\kappa+|\lambda_{\kappa+1}|^{-1}\sum_{i\le\kappa}
+\lambda_i$ with $\kappa=\max\{k:\sum_{i\le k}\lambda_i\ge0\}$.
+\end{assumption}
+
+To make the constants below concrete we measured the Lyapunov spectra of the
+corpus directly from the repository's integrators (Benettin QR with a
+finite-difference tangent map for the full Lorenz--96 spectrum; the two-trajectory
+method for the leading exponent of the others). \Cref{tab:master} reports them.
+The five systems realize a clean monotone sweep of $\lambda_1$ across zero, which
+\cref{prop:master} turns into the organizing axis of the paper.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{6pt}\renewcommand{\arraystretch}{1.2}
+\caption{Measured Lyapunov data of the corpus (per unit model-time). LQG is
+linear, so $\lambda_1=\log\rho$ exactly; Lorenz--96 is measured by full-spectrum
+Benettin QR (hence $n_+$, $\DKY$, $\hKS$); the nonlinear oscillators/field by the
+leading-exponent method. Attractor dimensions marked $\dagger$ are the design
+targets of \cref{sec:zoo} (box/Lyapunov dimension); $D_{\mathrm{KY}}$ for
+Lorenz--96 is measured. The top exponent sweeps from contracting through neutral
+to strongly chaotic.}
+\label{tab:master}
+\begin{tabular}{@{}lccccl@{}}
+\toprule
+System & $\lambda_1$ (time$^{-1}$) & $n_+$ & $\DKY$ & $\hKS$ (nats/time) & Regime\\
+\midrule
+LQG (E1) & $-0.105$ & $0$ & --- & $0$ & contracting (fully forecastable)\\
+Stuart--Landau (E3) & $\approx +0.010$ & $\lesssim1$ & $\approx7^{\dagger}$ & $\approx0$ & neutral / limit cycle\\
+Kuramoto (E2) & $\approx +0.033$ & few & $\approx5^{\dagger}$ & small & edge / weak chaos\\
+KS (E4) & $\approx +0.030$ & few & $5\text{--}8^{\dagger}$ & small & low-dim chaos ($T_\lambda\!\approx\!34$)\\
+Lorenz--96 (E5) & $\phantom{+}{+}1.68$ & $13$ & $27.1$ & $10.5$ & high-dim chaos ($T_\lambda\!\approx\!0.59$)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The context window is a delay-embedding information state}
+The first structural fact is that, for a chaotic attractor, the ideal AIS is not
+a Kalman mean but a \emph{delay embedding}, and its size is the attractor's
+dimension---not the ambient $n$. This is why a modest-context foundation model can
+forecast a nominally $200$-dimensional field: it only has to embed a $5$--$10$
+dimensional attractor.
+
+\begin{theorem}[The context is a delay-embedding AIS]\label{thm:takens}
+Under \cref{ass:chaos}, let $d_B=\boxdim\attr$ be the box-counting dimension of
+the attractor and fix an integer delay window $w\ge 2d_B+1$. Let
+$z_t=(O_t,O_{t-1},\dots,O_{t-w+1})\in\R^{mw}$ be the length-$w$ observation
+context and $\Phi_w:\attr\to\R^{mw}$, $x\mapsto(g(x),g(f^{-1}x),\dots,
+g(f^{-(w-1)}x))$, the delay map.
+\begin{enumerate}[leftmargin=1.7em,itemsep=1pt]
+\item \textup{(exact, noise-free)} For generic $(f,g)$ in the sense of
+Sauer--Yorke--Casdagli, $\Phi_w$ is a bi-Lipschitz embedding of $\attr$; hence in
+the limit $\sigma_v\to0$ the state is recovered, $x_t=\Phi_w^{-1}(z_t)$, and $z_t$
+is an \emph{exact} information state \textup{(}\cref{def:ais} with
+$\eps=\delta=0$\textup{)}: the one-step predictor $\hat O_{t+1}=g(f(\Phi_w^{-1}
+z_t))$ equals the Bayes predictor.
+\item \textup{(approximate, noisy)} If $F:=\Phi_w^{-1}$ is $\Lip(F)$-Lipschitz on
+a neighborhood of $\Phi_w(\attr)$, then $z_t$ is an $(\eps,\delta)$-AIS in
+Wasserstein-$1$ with $\eps,\delta\le L_\star\,\sigma_v\sqrt m$, where
+$L_\star=c\,\Lip(g\circ f)\,\Lip(F)$ for a universal constant $c$.
+\item \textup{(dimension)} Predictive sufficiency needs only $mw=O(m\,d_B)$
+context coordinates, and the intrinsic AIS dimension is the attractor dimension
+$d_B$ (estimated by $\DKY$), \emph{independent of the ambient dimension $n$}.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(1) The fractal Takens theorem of Sauer--Yorke--Casdagli~\cite{sauer1991}
+(extending Takens~\cite{takens1981}) states that for $w>2d_B$ a generic
+delay-coordinate map is injective and immersive on a compact invariant set;
+injectivity of a continuous map on a compact set gives a homeomorphism onto its
+image, and smoothness of $f,g$ upgrades this to bi-Lipschitz on $\attr$. Hence
+$F=\Phi_w^{-1}$ exists and recovers $x_t$; since $(X_t)$ is Markov, the future law
+depends on the history only through $x_t$, so a statistic determining $x_t$ is
+predictive-sufficient and $\hat O_{t+1}=g(f(x_t))$ is the Bayes one-step
+predictor.
+(2) With noise, $z_t=\Phi_w(x_t)+e_t$ where $e_t$ stacks $w$ observation noises,
+$\E\|e_t\|\le\sigma_v\sqrt{mw}$ (absorb $\sqrt w$ into $c$). The map
+$z\mapsto g(f(F(z)))$ is Lipschitz with constant $\Lip(g\circ f)\Lip(F)$, so the
+predictive-mean perturbation is at most $L_\star\sigma_v\sqrt m$; because
+Wasserstein-$1$ is dominated by the mean transport
+$\Wass(\mathrm{Law}(a),\mathrm{Law}(a'))\le\E\|a-a'\|$, both (AP1) and (AP2)
+(the latter using the same Lipschitz update $\psi$) hold with that bound.
+(3) is the coordinate count $mw$ with $w=\lceil2d_B+1\rceil$, and the observation
+that $F(z_t)\in\attr$ lives on a set of dimension $d_B$.
+\end{proof}
+
+\begin{remark}[Why context beats width]
+\Cref{thm:takens} explains a robust empirical fact about \TSFM s on physical
+data: a short context can be sufficient when the attractor is low-dimensional
+(the oscillator systems, $d_B\approx5$--$7$), whereas a system with a large
+attractor (Lorenz--96, $\DKY\approx27$) needs $w\gtrsim55$ delays for a univariate
+sensor---longer than the $C=32$ context of \cref{tab:tsfmarch}, so that model is
+\emph{structurally} under-contextualized on (E5), independent of training.
+\end{remark}
+
+\subsection{The Lyapunov predictability horizon}
+The second fact is a hard ceiling on forecast skill. In the linear case sloppy
+modes are learned \emph{slowly}; in the chaotic case the future is
+\emph{unknowable} past a horizon set by $\lambda_1$, for every model.
+
+\begin{theorem}[Lyapunov horizon; forecast-risk floor]\label{thm:horizon}
+Under \cref{ass:chaos} with $\lambda_1>0$, suppose the analysis-consistent set
+$\mathcal U_t=\{x:\ x\text{ compatible with }\mathcal H_t\text{ to within the
+noise}\}$ contains a segment of length $\ge\delta_0$ along the top Oseledets
+direction $u_1(x_t)$ \textup{(}generically true with $\delta_0\asymp\Lip(F)
+\sigma_v$ by \cref{thm:takens}\textup{)}, and let $g$ have non-degenerate
+differential $c_g>0$ along the forward image of $u_1$. Then for every $\eta>0$,
+all large $h$, and every $\mathcal H_t$-measurable $h$-step predictor
+$\hat O_{t+h}$,
+\begin{equation}
+ \sup_{x\in\mathcal U_t}\ \big\|g(f^h x)-\hat O_{t+h}\big\|^2
+ \;\ge\;\tfrac14\,c_g^2\,
+   \min\!\Big(\delta_0^2\,e^{2(\lambda_1-\eta)h},\ \mathrm{diam}\,g(\attr)^2\Big).
+ \label{eq:horizon}
+\end{equation}
+Consequently positive skill $R^2_h=1-\mathrm{MSE}(h)/\sigma_{\attr}^2>0$ is
+attainable only within the \emph{Lyapunov (predictability) horizon}
+\begin{equation}
+ h\;\lesssim\;\tau_\star=\frac1{\lambda_1}\,
+   \log\frac{\mathrm{diam}\,g(\attr)}{\delta_0}
+   \;\asymp\;\frac1{\lambda_1}\log\frac1{\sigma_v}.
+ \label{eq:taustar}
+\end{equation}
+The horizon depends only on the dynamics and the sensor: it is invariant to
+architecture, to context length beyond $w$, to corpus size, and to tokenizer
+resolution, and grows only logarithmically in $1/\sigma_v$.
+\end{theorem}
+\begin{proof}
+Take $x,x'\in\mathcal U_t$ separated by $\delta_0$ along $u_1(x_t)$. By
+Oseledets~\cite{oseledets1968}, $\tfrac1h\log\|Df^h(x_t)u_1\|\to\lambda_1$
+$\srb$-a.e., so $\|Df^h(x_t)u_1\|\ge e^{(\lambda_1-\eta)h}$ for $h\ge
+h_0(\eta,x_t)$; while the perturbation stays in the linear regime,
+$\|f^hx-f^hx'\|\ge\delta_0e^{(\lambda_1-\eta)h}$, saturating at
+$O(\mathrm{diam}\,\attr)$ once it exits. Applying $g$ (differential $c_g$ along the
+image) gives $\|g(f^hx)-g(f^hx')\|\ge c_g\min(\delta_0e^{(\lambda_1-\eta)h},
+\mathrm{diam}\,g(\attr))$. Any single value $\hat O_{t+h}$ is at distance
+$\ge\tfrac12$ this separation from one of $g(f^hx),g(f^hx')$ (triangle
+inequality), giving \eqref{eq:horizon}. Finally $R^2_h>0$ requires
+$\mathrm{MSE}(h)<\sigma_{\attr}^2=\Theta(\mathrm{diam}\,g(\attr)^2)$, which fails
+once the $\min$ in \eqref{eq:horizon} saturates, i.e.\ for $h>\tau_\star$ in
+\eqref{eq:taustar}.
+\end{proof}
+
+\begin{remark}[The floor is the classic error-growth curve; Bayes version]
+Inequality \eqref{eq:horizon} is the minimax form of the Lorenz error-growth
+law~\cite{lorenz1963}: exponential separation at rate $\lambda_1$ until saturation
+at the climatological variance. The same bound holds for the Bayes risk whenever
+the analysis posterior places $\Omega(1)$ mass near both endpoints of the
+$\delta_0$-segment. Numerically, $\tau_\star$ is $\approx0.59\,\mathrm{time}$ for
+Lorenz--96 but $\approx34\,\mathrm{time}$ for KS (\cref{tab:master}): the same
+foundation model is useful many steps ahead on the smooth field and only a step
+or two ahead on the stiff one, exactly in inverse proportion to $\lambda_1$.
+\end{remark}
+
+\subsection{The dynamic observability ceiling}
+In the linear theory (\cref{thm:forecastdichotomy}) an unobserved mode gives a
+\emph{static} null direction of the parameter FIM. For a chaotic system the
+analogue is sharper: an unobserved \emph{unstable} direction makes the state error
+diverge exponentially. The relevant object is the state (data-assimilation) Fisher
+information---the observability Gramian of the tangent filter---rather than the
+parameter FIM, but it is computed by the \emph{same} tangent recursion of
+\eqref{eq:gramian}, now differentiated with respect to the state rather than
+$\theta$.
+
+\begin{theorem}[Unstable-subspace observability; AIS tracks iff it sees $\Eu$]
+\label{thm:unstable}
+Consider the tangent estimation problem along a $\srb$-typical orbit, with
+tangent map $M_t=Df(X_t)$ and observation Jacobian $C_t=Dg(X_t)$, and let
+$\Eu\oplus\Ec$ be the non-negative Oseledets subspace $(\dim=n_++n_0)$.
+\begin{enumerate}[leftmargin=1.7em,itemsep=1pt]
+\item \textup{(bounded tracking)} If $\Eu\oplus\Ec$ is uniformly completely
+observable through $\{(C_t,M_t)\}$, the information filter has a unique bounded
+stationary error covariance supported on $\Eu\oplus\Ec$; the delay-AIS of
+\cref{thm:takens} tracks the state with error uniformly bounded in $t$, despite
+$\lambda_1>0$. The stable subspace $\Es$ is self-correcting: its error decays at
+the stable rates regardless of observation.
+\item \textup{(divergence)} If some unstable direction $u\in\Eu$ with exponent
+$\lambda_u>0$ is uniformly unobservable $(C_t$ annihilates the transported $u$
+along the orbit$)$, then every filter/AIS has error along $u$ obeying
+$\liminf_{t}\tfrac1t\log\E\|e_t\!\cdot\!u\|\ge\lambda_u>0$: it diverges
+exponentially, and no context length or corpus removes it.
+\item \textup{(fat-sensor chaotic ceiling)} Bounded tracking requires the
+observations to span the $n_++n_0$ non-negative directions; hence whenever
+$m<n_+$---automatic for a univariate or low-$m$ forecaster of a high-dimensional
+chaos such as Lorenz--96, where $n_+=13$---some unstable direction is unobserved
+and (2) applies.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+This is the ``assimilation in the unstable subspace'' phenomenon
+\cite{trevisan2011,bocquet2017,gurumoorthy2017}. For the linear tangent cocycle
+the Kalman information matrix asymptotically annihilates the strictly stable
+directions (their errors contract under $M_t$ irrespective of data), so the
+non-trivial filtering problem lives on $\Eu\oplus\Ec$; uniform observability of
+that subspace yields a projected Riccati map that is a uniform contraction on the
+cone of positive-definite operators, giving a unique bounded fixed point
+(claim~1). For claim~2, an unobserved direction receives zero innovation gain, so
+its error obeys the homogeneous recursion $e_{t+1}=M_te_t$ restricted to $u$,
+whose growth rate is $\lambda_u$ by Oseledets. Claim~3 is the rank count
+$\dim(\Eu\oplus\Ec)=n_++n_0>m$ when $m<n_+$.
+\end{proof}
+
+\begin{remark}[Static null vs.\ dynamic divergence]
+\Cref{thm:forecastdichotomy,thm:unstable} are the two faces of one observability
+ceiling. When $\lambda_1<0$ (LQG) an unobserved mode is a \emph{static} kernel
+direction of the parameter FIM---unidentifiable but harmless to forecasting a
+stable series. When $\lambda_1>0$ an unobserved \emph{unstable} mode is a
+\emph{dynamic} defect: its estimation error grows like $e^{\lambda_u t}$, so it
+destroys state tracking, not merely parameter identification. Chaos converts the
+sensor-limited null space from a nuisance into a hard wall.
+\end{remark}
+
+\subsection{Metric entropy sets the tokenizer information rate}
+Tokenization was priced in \cref{prop:quant} as data processing on the parameter
+FIM. For a chaotic system it acquires a second, sharper role: the vocabulary must
+be large enough to convey the information the dynamics \emph{creates} each step.
+
+\begin{proposition}[Pesin bound on the tokenizer]\label{prop:pesin}
+Under \cref{ass:chaos}, Pesin's formula for the SRB measure
+gives $\hKS(\srb)=\sum_{i:\lambda_i>0}\lambda_i$~\cite{pesin1977,%
+ledrappieryoung1985,young2002}. To hold the filtering/AIS error stationary at
+fixed precision, the observation channel must convey mutual information about the
+state at rate $\ge\hKS(\srb)$ per unit time. A \Chronos\ tokenizer emitting $m$
+tokens per observation step from a $B$-symbol vocabulary has per-step capacity
+$\le m\log B$; hence a necessary condition for the tokenized AIS to track the
+state is
+\begin{equation}
+ m\log B\;\ge\;\hKS(\srb)\,\Delta_{\mathrm s}
+ \;=\;\Big(\!\sum_{\lambda_i>0}\lambda_i\Big)\,\Delta_{\mathrm s}
+ \qquad(\text{per sampled step, spacing }\Delta_{\mathrm s}).
+ \label{eq:pesin}
+\end{equation}
+When $B$ is too small the quantized channel is throttled below the entropy
+production and forecast skill collapses even \emph{within} the Lyapunov horizon;
+coarser sampling (larger $\Delta_{\mathrm s}$) tightens the bound. Thus $B$ is
+lower-bounded by the system's entropy rate, not merely by a target numerical
+resolution.
+\end{proposition}
+\begin{proof}
+By the Kolmogorov--Sinai/Pesin identity the dynamics generates $\hKS$ nats of new
+state uncertainty per unit time in the unstable subspace; a stationary posterior
+entropy requires the observation to remove at least as much, i.e.\
+$I(O_{t+1};X_{t+1}\mid\mathcal H_t)\ge\hKS\Delta_{\mathrm s}$ per sampled step.
+The tokenized observation is a vector of $m$ symbols from an alphabet of size $B$,
+whose entropy---hence the mutual information it can carry---is at most $m\log B$.
+Combining gives \eqref{eq:pesin}.
+\end{proof}
+
+\begin{remark}[The corpus is comfortably above the Pesin floor]
+For Lorenz--96, $\hKS\Delta_{\mathrm s}\approx10.5\times0.05\approx0.53$ nats/step,
+far below the full-state token budget $m\log B=40\log256\approx222$ nats; the
+tokenizer is not the bottleneck---observability is (\cref{thm:unstable}). A
+\emph{univariate} sensor ($m=1$) still clears the rate bound ($\log256\approx5.5$
+nats) yet fails on (E5) because it cannot see the $13$ unstable directions: the
+two obstructions are independent, and on high-dimensional chaos the observability
+wall binds first.
+\end{remark}
+
+\subsection{One axis: the top Lyapunov exponent}
+The linear theory of \crefrange{sec:stability}{sec:learn} and the chaotic theory
+above are not two subjects but two signs of one quantity---the top Lyapunov
+exponent of the tangent cocycle $Df$, which for the LQG system is $\log\rho(A)$
+and for the nonlinear systems is $\lambda_1$.
+
+\begin{proposition}[Stability margin and Lyapunov time are one dial]
+\label{prop:master}
+Write the leading tangent multiplier as $r=e^{\lambda_1}$.
+\begin{enumerate}[leftmargin=1.7em,itemsep=1pt]
+\item \textup{(contracting side, $\lambda_1<0$)} The process is globally
+forecastable; the governing object is the \emph{parameter} Fisher spectrum, with
+per-mode information $\Gam_{jj}\asymp\mathrm{gain}_j^2/(1-r_j^2)$ and
+$\lambda_{\max}(\Gam)\asymp1/(1-\rho)$ \textup{(}\cref{thm:stability}\textup{)}.
+\item \textup{(chaotic side, $\lambda_1>0$)} The \emph{state} is forecastable only
+within $\tau_\star\asymp\lambda_1^{-1}\log(1/\sigma_v)$
+\textup{(}\cref{thm:horizon}\textup{)}.
+\item \textup{(the shared singularity)} As $\lambda_1\to0$ (equivalently
+$\rho\to1$), both diverge at the \emph{same} rate: since $1-r^2=1-e^{2\lambda_1}
+\sim-2\lambda_1$, the contracting-side information $1/(1-r^2)\sim1/(2|\lambda_1|)$
+and the chaotic-side horizon $\tau_\star\sim1/\lambda_1$ are the one
+$1/|\lambda_1|$ singularity approached from the two sides of the unit circle.
+\end{enumerate}
+Observability plays the dual role on each side: statically (unidentifiable
+parameter directions, \cref{thm:forecastdichotomy}) for $\lambda_1<0$, and
+dynamically (exponentially unpredictable state directions, \cref{thm:unstable})
+for $\lambda_1>0$.
+\end{proposition}
+\begin{proof}
+Claims (1)--(2) restate \cref{thm:stability,thm:horizon}. For (3), expand
+$1-e^{2\lambda_1}=-2\lambda_1+O(\lambda_1^2)$ as $\lambda_1\to0^-$, so the AR(1)
+information $\Gam_{jj}\asymp1/(1-r^2)\sim1/(2|\lambda_1|)$; and $\tau_\star=
+\lambda_1^{-1}\log(1/\delta_0)$ from \eqref{eq:taustar}. Both scale as
+$|\lambda_1|^{-1}$ up to the slowly varying $\log(1/\delta_0)$ factor.
+\end{proof}
+
+The corpus (\cref{tab:master}) instantiates the whole axis: LQG at
+$\lambda_1=-0.105$ is the parameter-identification regime of
+\crefrange{sec:model}{sec:learn}; Stuart--Landau and Kuramoto sit near the
+$\lambda_1=0$ singularity (a limit cycle and the synchronization edge), where both
+information and predictability are maximal but marginal; KS is weak low-dimensional
+chaos with a long $\tau_\star$; and Lorenz--96 at $\lambda_1=+1.68$ is deep in the
+horizon-limited regime with a $13$-dimensional unstable subspace that a
+low-$m$ foundation model cannot fully observe. A single foundation model trained
+across all five is therefore doing parameter identification, near-critical
+tracking, and horizon-limited state forecasting at once---three problems the top
+Lyapunov exponent tells apart.
+
 \section{Numerical Study: A 200-State, 100-Observation Stable LQG System}
 \label{sec:experiments}
 
@@ -957,6 +1580,54 @@ sloppy vs.\ stiff learnability & $\propto\lambda$ ratio & $\sim\!10^6$\\
 \end{tabular}
 \end{table}
 
+\subsection{Cross-system forecasting and the Lyapunov horizon}
+\label{sec:crosssystem}
+We also train the single cross-system \Chronos-lite of \cref{tab:tsfmarch} on the
+full corpus of \cref{sec:zoo} and forecast each system's channels. \Cref{fig:zoo}
+shows representative steady-state dynamics of four environments; the oscillator
+systems (E2)--(E3) collapse onto low-dimensional synchronized manifolds
+(consistent with $\lambda_1\!\approx\!0$ and $d_B\!\approx\!5$--$7$), while KS (E4)
+exhibits the sustained spatiotemporal chaos of a positive $\lambda_1$.
+\Cref{fig:forecasts} contrasts the model's probabilistic forecasts on the stable
+LQG series and on the (near-critical) Kuramoto series. The behavior is exactly
+what \cref{thm:takens,thm:horizon} predict. On LQG ($\lambda_1<0$) the sample
+paths stay tight and skill persists over the whole horizon---there is no
+predictability wall, only the sloppy-mode accuracy floor of \cref{prop:learn}. On
+the oscillator/chaotic series the sample cloud fans out on the scale of the
+Lyapunov time $\tau_\star\asymp1/\lambda_1$: for the fast, high-dimensional
+Lorenz--96 the useful horizon is a fraction of a time unit and a $C=32$ univariate
+context is below the Takens window $2\DKY+1\approx55$
+(\cref{thm:takens}, remark), so the model is both horizon- and observability-%
+limited there; for the slow KS ($\tau_\star\!\approx\!34$) it forecasts many steps
+ahead. The measured Lyapunov data of \cref{tab:master} thus predicts, system by
+system, how far the one foundation model can see.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.244\linewidth]{../visualizations/kuramoto_results.png}\hfill
+\includegraphics[width=0.244\linewidth]{../visualizations/stuart_landau_results.png}\hfill
+\includegraphics[width=0.244\linewidth]{../visualizations/ks_results.png}\hfill
+\includegraphics[width=0.244\linewidth]{../visualizations/lqg_results.png}
+\caption{Representative dynamics of four corpus environments (left to right):
+multi-population Kuramoto (E2), cluster Stuart--Landau (E3), Kuramoto--Sivashinsky
+(E4), and the LQG observations (E1). The oscillator systems synchronize onto
+low-dimensional manifolds ($\lambda_1\!\approx\!0$); KS shows low-dimensional
+spatiotemporal chaos.}
+\label{fig:zoo}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.49\linewidth]{../tsfm/tsfm_forecast_LQG.png}\hfill
+\includegraphics[width=0.49\linewidth]{../tsfm/tsfm_forecast_Kuramoto.png}
+\caption{Cross-system \Chronos-lite forecasts (context, ground truth, sample
+paths, and mean). Left: the stable LQG series (E1, $\lambda_1<0$)---no
+predictability wall, tight samples. Right: the Kuramoto series (E2, near the
+$\lambda_1\!\approx\!0$ synchronization edge)---the sample cloud spreads on the
+Lyapunov scale of \cref{thm:horizon}.}
+\label{fig:forecasts}
+\end{figure}
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -983,6 +1654,24 @@ a series learnable makes its FIM ill-conditioned, so second-order (natural-%
 gradient / K-FAC) training and careful tokenization matter most exactly where
 forecasting is most rewarding.
 
+\paragraph{From learnability to predictability.}
+Crossing the unit circle changes the question a foundation model faces from
+\emph{learnability} to \emph{predictability} (\cref{prop:master}). Below it
+($\lambda_1<0$) enough data eventually identifies every observed mode; the only
+enemy is the sloppy spectrum. Above it ($\lambda_1>0$) the enemy is the dynamics
+itself: \cref{thm:horizon} caps every model's horizon at $\tau_\star\asymp
+\lambda_1^{-1}\log(1/\sigma_v)$, so the returns to scale---more parameters, more
+context, more corpus---collapse past $\tau_\star$, and the only levers are a
+quieter sensor (logarithmic gain) or a shorter sampling interval. This reframes
+``foundation-model'' claims for physical time series: on chaotic data the ceiling
+is physical, not statistical, and benchmarks should report skill \emph{in
+Lyapunov times} $h/\tau_\star$ rather than in raw steps, since $\tau_\star$
+differs by two orders of magnitude across our corpus (Lorenz--96 vs.\ KS,
+\cref{tab:master}). The complementary lever is \cref{thm:takens}: match the
+context length to the attractor's Takens window $2\DKY+1$, which for the
+low-dimensional oscillators is small but for Lorenz--96 exceeds the context we
+used---an architectural, not a data, deficiency.
+
 \paragraph{Tokenization revisited.}
 \Cref{prop:quant} places \Chronos's ``regression via classification'' inside the
 information geometry: quantization is data processing that can only lose Fisher
@@ -994,13 +1683,20 @@ Fisher view simply prices the discretization.
 \paragraph{Limitations.}
 The exact spectral results are linear--Gaussian; nonlinear systems retain the
 structure through the extended/ensemble tangent filter but lose the closed-form
-$1/(1-r^2)$ law. Our \Chronos-lite is small and trained per stability level
-rather than as a single cross-system foundation model; the cross-system,
-zero-shot regime---where one model amortizes identification across many
-systems---is the natural sequel, and \cref{prop:aisbound} suggests the shared
-latent's AIS quality is what governs transfer. Finally, we analyzed the
-one-step FIM; multi-step and rolling forecast risk propagate it through the
-dynamics, amplifying the role of the slow modes further.
+$1/(1-r^2)$ law, which is why the chaotic theory (\cref{sec:chaos}) is stated in
+terms of Lyapunov exponents rather than a closed-form spectrum. Several
+qualifications apply there. \Cref{thm:takens} is generic (Sauer--Yorke--Casdagli)
+and the constant $\Lip(F)$ can be large near tangencies; \cref{thm:horizon} is a
+minimax bound, tightened to a Bayes bound only under a posterior-excitation
+assumption; and the measured $\lambda_1$ for KS is specific to the repository's
+first-order IMEX integrator and step size, so its absolute value should be read as
+characterizing \emph{this corpus} rather than the continuum PDE. We computed the
+full Lyapunov spectrum only for Lorenz--96; the oscillator/field dimensions in
+\cref{tab:master} marked $\dagger$ are design targets, and a full-spectrum
+$\DKY$/$\hKS$ for KS and the Kuramoto family is left to future work. Finally, we
+analyzed the one-step FIM and the one-step Lyapunov horizon; multi-step and
+rolling forecast risk propagate both through the dynamics, amplifying the role of
+the slow modes (contracting side) and of $\lambda_1$ (chaotic side) further.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -1013,11 +1709,22 @@ exactly what a forecaster optimizes; and for the linear--Gaussian instance that
 block's spectrum is written by the system's stability margins and observability.
 The slow modes near the unit circle carry the information and are learned first;
 the fast modes carry little and are learned last; the unobserved modes carry none
-and are never learned until a sensor is added. Stability is the master dial,
-trading learnability against conditioning; observability is the ceiling. The same
-Fisher matrix that measures how well an agent can learn its world measures how
-well a foundation model can learn a time series---and its small eigenvalues, in
-both cases, are the message.
+and are never learned until a sensor is added. Beyond the unit circle the story
+continues by one letter: the tangent cocycle whose stable spectrum writes the
+parameter Fisher information also carries the Lyapunov exponents, and their sign is
+the master dial. On the contracting side ($\lambda_1<0$) the object is
+identifiability and the enemy is the sloppy spectrum; on the chaotic side
+($\lambda_1>0$) the object is predictability and the enemy is the Lyapunov horizon
+$\tau_\star\asymp1/\lambda_1$; and the two meet at $\lambda_1=0$, where the
+parameter-information blow-up $1/(1-r^2)$ and the predictability horizon
+$1/\lambda_1$ are one and the same $1/|\lambda_1|$ singularity. The context window
+is a delay-embedding information state of the attractor, so a modest model
+forecasts a high-dimensional field; but only the part of the unstable subspace it
+can observe, and only for a Lyapunov time. Stability and observability are the
+dials, predictability is the ceiling, and the same tangent-filter Fisher geometry
+that measures how well an agent can learn its world measures how well---and how
+far ahead---a foundation model can forecast a time series. Its small eigenvalues,
+and now its positive Lyapunov exponents, are the message.
 
 \begin{thebibliography}{99}
 \small\setlength{\itemsep}{1pt}
@@ -1059,5 +1766,43 @@ both cases, are the message.
 \bibitem{goswami2024} M.~Goswami, K.~Szafer, A.~Choudhry, Y.~Cai, S.~Li, and
   A.~Dubrawski, \emph{MOMENT: a family of open time-series foundation models},
   in Proc.~Int.~Conf.~Mach.~Learn.~(ICML), 2024.
+\bibitem{takens1981} F.~Takens, \emph{Detecting strange attractors in
+  turbulence}, in Dynamical Systems and Turbulence (Warwick 1980), Lecture Notes
+  in Math.\ 898, Springer, 1981, pp.~366--381.
+\bibitem{sauer1991} T.~Sauer, J.~A.~Yorke, and M.~Casdagli, \emph{Embedology},
+  J.~Statist.~Phys., 65 (1991), pp.~579--616.
+\bibitem{oseledets1968} V.~I.~Oseledets, \emph{A multiplicative ergodic theorem:
+  Lyapunov characteristic numbers for dynamical systems}, Trans.~Moscow
+  Math.~Soc., 19 (1968), pp.~197--231.
+\bibitem{pesin1977} Ya.~B.~Pesin, \emph{Characteristic Lyapunov exponents and
+  smooth ergodic theory}, Russian Math.~Surveys, 32 (1977), pp.~55--114.
+\bibitem{ledrappieryoung1985} F.~Ledrappier and L.-S.~Young, \emph{The metric
+  entropy of diffeomorphisms, Parts~I--II}, Ann.\ of Math., 122 (1985),
+  pp.~509--574.
+\bibitem{young2002} L.-S.~Young, \emph{What are SRB measures, and which dynamical
+  systems have them?}, J.~Statist.~Phys., 108 (2002), pp.~733--754.
+\bibitem{kaplanyorke1979} J.~L.~Kaplan and J.~A.~Yorke, \emph{Chaotic behavior
+  of multidimensional difference equations}, in Functional Differential Equations
+  and Approximation of Fixed Points, Lecture Notes in Math.\ 730, Springer, 1979,
+  pp.~204--227.
+\bibitem{lorenz1963} E.~N.~Lorenz, \emph{Deterministic nonperiodic flow},
+  J.~Atmos.~Sci., 20 (1963), pp.~130--141.
+\bibitem{lorenz1996} E.~N.~Lorenz, \emph{Predictability: a problem partly
+  solved}, in Proc.~ECMWF Seminar on Predictability, Vol.~1, Reading, UK, 1996,
+  pp.~1--18.
+\bibitem{trevisan2011} A.~Trevisan and L.~Palatella, \emph{On the Kalman filter
+  error covariance collapse into the unstable subspace}, Nonlin.~Processes
+  Geophys., 18 (2011), pp.~243--250.
+\bibitem{bocquet2017} M.~Bocquet, K.~S.~Gurumoorthy, A.~Apte, A.~Carrassi,
+  C.~Grudzien, and C.~K.~R.~T.~Jones, \emph{Degenerate Kalman filter error
+  covariances and their convergence onto the unstable subspace}, SIAM/ASA
+  J.~Uncertain.~Quantif., 5 (2017), pp.~304--333.
+\bibitem{gurumoorthy2017} K.~S.~Gurumoorthy, C.~Grudzien, A.~Apte, A.~Carrassi,
+  and C.~K.~R.~T.~Jones, \emph{Rank deficiency of the Kalman error covariance in
+  linear time-varying systems with deterministic evolution}, SIAM J.~Control
+  Optim., 55 (2017), pp.~741--759.
+\bibitem{pathak2018} J.~Pathak, B.~Hunt, M.~Girvan, Z.~Lu, and E.~Ott,
+  \emph{Model-free prediction of large spatiotemporally chaotic systems from
+  data: a reservoir computing approach}, Phys.~Rev.~Lett., 120 (2018), 024102.
 \end{thebibliography}
 \end{document}

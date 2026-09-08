@@ -15,6 +15,8 @@
         "sl_test": 299,
         "ks_train": 40,
         "ks_test": 399,
+        "lor96_train": 50,
+        "lor96_test": 499,
         "model_train": 0
     },
     "_B_info": "Number of bins for the MeanScaleQuantizer (vocabulary size for the tokenized time series).",
