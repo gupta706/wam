@@ -12,7 +12,7 @@ __pycache__/
 
 # macOS
 .DS_Store
-
+Wtr*
 
 # tex files
 *.log
