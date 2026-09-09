@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import subprocess
 
 # Add the wam directory to the path so we can import from environment
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -10,51 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from tsfm.chronos_lite import MeanScaleQuantizer, make_token_windows, train_tslm, forecast_channel
 from tsfm.data_generators import SYSTEMS_REGISTRY, load_or_generate
 
-def evaluate_model(name, model, quant, test_traj, H):
-    print(f"\n--- Evaluating TSFM on {name} ---")
-    
-    # Evaluate by forecasting one channel
-    O = test_traj[0]
-    ctxlen = model.ctx
-    test_channel = 0
-    context = O[:ctxlen, test_channel]
-    truth = O[ctxlen:ctxlen + H, test_channel]
-    
-    print(f"Forecasting {H} steps ahead...")
-    fc = forecast_channel(model, quant, context, H=H, n_samples=30)
-    pred_mean = fc.mean(0)
-    
-    rmse = np.sqrt(np.mean((pred_mean - truth)**2))
-    print(f"Forecast RMSE: {rmse:.5f}")
-    
-    # Plot forecast
-    fig, ax = plt.subplots(figsize=(8, 4))
-    
-    time_ctx = np.arange(ctxlen)
-    time_pred = np.arange(ctxlen - 1, ctxlen + H)
-    
-    ax.plot(time_ctx, context, color='black', label='Context')
-    
-    truth_plot = np.concatenate([[context[-1]], truth])
-    ax.plot(time_pred, truth_plot, color='blue', label='Ground Truth')
-    
-    # Plot samples
-    for i in range(min(10, fc.shape[0])):
-        fc_plot = np.concatenate([[context[-1]], fc[i]])
-        ax.plot(time_pred, fc_plot, color='red', alpha=0.1)
-    
-    pred_mean_plot = np.concatenate([[context[-1]], pred_mean])
-    ax.plot(time_pred, pred_mean_plot, color='red', label='TSFM Mean Forecast')
-    
-    ax.set_title(f'TSFM Forecast on {name}')
-    ax.legend()
-    
-    out_path = os.path.join(os.path.dirname(__file__), f'tsfm_forecast_{name}.png')
-    plt.tight_layout()
-    plt.savefig(out_path)
-    print(f"Saved forecast plot to {out_path}")
-    plt.close()
-
+from tsfm.evaluate_checkpoint import evaluate_model
 
 def main():
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -85,7 +42,7 @@ def main():
     stride = config["stride"]
     quant = MeanScaleQuantizer(B=B)
     
-    tokenized_path = f"data/Wtr_unified_N{N}_B{B}_ctx{ctx}_stride{stride}.npy"
+    tokenized_path = os.path.join(os.path.dirname(__file__), f"data/Wtr_unified_N{N}_B{B}_ctx{ctx}_stride{stride}.npy")
     if os.path.exists(tokenized_path):
         print(f"Loading tokenized trajectories from {tokenized_path}...")
         Wtr = np.load(tokenized_path)
@@ -108,8 +65,19 @@ def main():
     model = train_tslm(Wtr, B=B, ctx=ctx, epochs=config["epochs"], d_model=config["d_model"], n_layer=config["n_layer"], batch=config["batch"], max_batches=config.get("max_batches"), verbose=True, seed=seeds.get("model_train", 0))
     
     H = config["H"]
+    out_dir = os.path.dirname(__file__)
     for sys_name in SYSTEMS_REGISTRY.keys():
-        evaluate_model(sys_name, model, quant, test_data[sys_name], H)
+        evaluate_model(sys_name, model, quant, test_data[sys_name], H, out_dir)
+
+    print("\n--- Pushing to GitHub ---")
+    repo_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    try:
+        subprocess.run(['git', 'add', '.'], cwd=repo_dir, check=True)
+        subprocess.run(['git', 'commit', '-m', 'Update foundation model and evaluation plots'], cwd=repo_dir, check=True)
+        subprocess.run(['git', 'push'], cwd=repo_dir, check=True)
+        print("Successfully pushed to GitHub!")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to push to GitHub. Error: {e}")
 
 if __name__ == "__main__":
     main()

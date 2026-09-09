@@ -3,8 +3,8 @@ from numba import njit
 import sys
 import os
 
-def create_lqg_params(K: int = 100, m: int = 100, rho: float = 0.9, 
-                      r_lo: float = 0.15, sigma_w: float = 1.0, 
+def create_lqg_params(K: int = 100, m: int = 100, rho: float = 0.99, 
+                      r_lo: float = 0.9, sigma_w: float = 0.2, 
                       sigma_v: float = 0.1, n_hidden: int = 8, 
                       obs_gain_lo: float = 0.4, obs_gain_hi: float = 1.0, 
                       obs_slow_bias: float = 2.5, key_seed: int = 42):
@@ -19,8 +19,8 @@ def create_lqg_params(K: int = 100, m: int = 100, rho: float = 0.9,
     r = np.geomspace(r_lo, rho, K)
     
     # random modal frequencies, biased low so the slow modes are also smooth
-    omega = rng.uniform(0.05, 0.9, size=K) * (1.0 - 0.5 * (r / rho))
-    omega = np.clip(omega, 0.03, np.pi - 0.05)
+    omega = rng.uniform(0.01, 0.1, size=K) * (1.0 - 0.5 * (r / rho))
+    omega = np.clip(omega, 0.001, np.pi - 0.05)
 
     # block-diagonal A
     A = np.zeros((n, n))

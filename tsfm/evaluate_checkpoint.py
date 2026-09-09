@@ -18,50 +18,67 @@ def evaluate_model(name, model, quant, test_traj, H, out_dir):
     # Evaluate by forecasting one channel
     O = test_traj[0]
     ctxlen = model.ctx
-    test_channel = 0
-    context = O[:ctxlen, test_channel]
     # Adjust H to not exceed the available trajectory length
     H_actual = min(H, len(O) - ctxlen)
     if H_actual <= 0:
         print("Error: Context length is equal to or larger than trajectory length.")
         return
         
-    truth = O[ctxlen:ctxlen + H_actual, test_channel]
+    num_channels = O.shape[1]
+    print(f"Forecasting {H_actual} steps ahead for {num_channels} states...")
     
-    print(f"Forecasting {H_actual} steps ahead...")
-    # Use a low temperature (0.1) to make the categorical sampling nearly deterministic,
-    # preventing harsh random jumps that make the physical trajectories look disconnected.
-    fc = forecast_channel(model, quant, context, H=H_actual, n_samples=30, temperature=0.7)
-    pred_mean = fc.mean(0)
+    fig, axes = plt.subplots(num_channels, 1, figsize=(10, 2.5 * num_channels), sharex=True)
+    if num_channels == 1:
+        axes = [axes]
+        
+    rmses = []
     
-    rmse = np.sqrt(np.mean((pred_mean - truth)**2))
-    print(f"Forecast RMSE: {rmse:.5f}")
+    # Extract all channels up front
+    all_contexts = O[:ctxlen, :].T  # shape (num_channels, ctxlen)
+    all_truths = O[ctxlen:ctxlen + H_actual, :].T  # shape (num_channels, H_actual)
     
-    # Plot forecast
-    fig, ax = plt.subplots(figsize=(8, 4))
+    # Vectorized forecast across all channels simultaneously
+    all_fcs = forecast_channel(model, quant, all_contexts, H=H_actual, n_samples=4, temperature=0.7)
     
-    time_ctx = np.arange(ctxlen)
-    time_pred = np.arange(ctxlen - 1, ctxlen + H_actual)
+    for c in range(num_channels):
+        context = all_contexts[c]
+        truth = all_truths[c]
+        fc = all_fcs[c]
+        pred_mean = fc.mean(0)
+        
+        rmse = np.sqrt(np.mean((pred_mean - truth)**2))
+        rmses.append(rmse)
+        
+        ax = axes[c]
+        time_ctx = np.arange(ctxlen)
+        time_pred = np.arange(ctxlen - 1, ctxlen + H_actual)
+        
+        ax.plot(time_ctx, context, color='black', label='Context')
+        
+        truth_plot = np.concatenate([[context[-1]], truth])
+        ax.plot(time_pred, truth_plot, color='blue', label='Ground Truth')
+        
+        # Plot samples
+        for i in range(min(10, fc.shape[0])):
+            fc_plot = np.concatenate([[context[-1]], fc[i]])
+            ax.plot(time_pred, fc_plot, color='red', alpha=0.1)
+        
+        pred_mean_plot = np.concatenate([[context[-1]], pred_mean])
+        ax.plot(time_pred, pred_mean_plot, color='red', label='TSFM Mean Forecast')
+        
+        ax.set_ylabel(f'State {c+1}')
+        if c == 0:
+            ax.set_title(f'TSFM Forecast on {name} (Checkpoint)')
+            ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1))
+
+    axes[-1].set_xlabel('Time Step')
     
-    ax.plot(time_ctx, context, color='black', label='Context')
-    
-    truth_plot = np.concatenate([[context[-1]], truth])
-    ax.plot(time_pred, truth_plot, color='blue', label='Ground Truth')
-    
-    # Plot samples
-    for i in range(min(10, fc.shape[0])):
-        fc_plot = np.concatenate([[context[-1]], fc[i]])
-        ax.plot(time_pred, fc_plot, color='red', alpha=0.1)
-    
-    pred_mean_plot = np.concatenate([[context[-1]], pred_mean])
-    ax.plot(time_pred, pred_mean_plot, color='red', label='TSFM Mean Forecast')
-    
-    ax.set_title(f'TSFM Forecast on {name} (Checkpoint)')
-    ax.legend()
+    avg_rmse = np.mean(rmses)
+    print(f"Average Forecast RMSE: {avg_rmse:.5f}")
     
     out_path = os.path.join(out_dir, f'tsfm_forecast_{name}_eval.png')
     plt.tight_layout()
-    plt.savefig(out_path)
+    plt.savefig(out_path, bbox_inches='tight')
     print(f"Saved forecast plot to {out_path}")
     plt.close()
 

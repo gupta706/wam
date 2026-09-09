@@ -114,36 +114,42 @@ class TinyTSLM(nn.Module):
 # --------------------------------------------------------------------------- #
 #  Build a token corpus from multivariate observation trajectories
 # --------------------------------------------------------------------------- #
-def make_token_windows(trajectories, quant: MeanScaleQuantizer, ctx: int,
-                       stride: int = 8, rng=None):
-    """trajectories: list of (T, m) arrays.  Each channel of each trajectory is
-    an independent univariate series (Chronos global-model regime).  Returns a
-    (N, ctx+1) int64 array of token windows (context + next token)."""
+def make_token_windows(trajectories: list, quant: MeanScaleQuantizer, ctx: int,
+                       stride: int = 8, rng=None) -> np.ndarray:
+    """Convert a list of multi-channel trajectories into a flat dataset of tokenized sliding windows.
+    Each window (length ctx+1) is scaled independently using the mean of its first ctx steps."""
     from numpy.lib.stride_tricks import sliding_window_view
     
-    all_wins = []
+    windows_list = []
+    
     for traj in trajectories:
-        T, m = traj.shape
-        # Vectorized scale calculation across channels
-        s_arr = np.mean(np.abs(traj[:max(ctx, 8), :]), axis=0)
+        T_i, m = traj.shape
+        if T_i <= ctx:
+            continue
+            
+        # Extract sliding windows in real units
+        # traj.T is (m, T_i). sliding_window_view gives (m, num_windows, ctx+1)
+        windows = sliding_window_view(traj.T, window_shape=ctx+1, axis=1)
+        
+        if stride > 1:
+            windows = windows[:, ::stride, :]
+            
+        # Flatten across channels and windows -> (m * num_windows, ctx+1)
+        flat_windows = windows.reshape(-1, ctx + 1)
+        
+        # Compute local scale 's' PER WINDOW using only the context part (first ctx steps)
+        s_arr = np.mean(np.abs(flat_windows[:, :ctx]), axis=1)
         s_arr = np.where(s_arr > 1e-6, s_arr, 1.0)
         
-        # Quantize all channels at once (traj.T is (m, T))
-        tok = quant.quantize(traj.T, s_arr)  # (m, T)
+        # Quantize all windows dynamically using their own independent scale
+        tok_windows = quant.quantize(flat_windows, s_arr)
         
-        # Vectorized sliding window
-        windows = sliding_window_view(tok, window_shape=ctx+1, axis=1) # (m, T-ctx, ctx+1)
+        windows_list.append(tok_windows)
         
-        # Apply stride and reshape
-        max_start = T - ctx - 1
-        if max_start > 0:
-            strided_windows = windows[:, 0:max_start:stride, :]
-            all_wins.append(strided_windows.reshape(-1, ctx+1))
-            
-    if len(all_wins) > 0:
-        W = np.concatenate(all_wins, axis=0)
-    else:
+    if not windows_list:
         W = np.empty((0, ctx+1), dtype=np.int64)
+    else:
+        W = np.concatenate(windows_list, axis=0)
         
     if rng is not None:
         rng.shuffle(W)
@@ -241,24 +247,43 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
 def forecast_channel(model: TinyTSLM, quant: MeanScaleQuantizer,
                      context: np.ndarray, H: int, n_samples: int = 20,
                      temperature: float = 1.0):
-    """Probabilistic forecast of one univariate channel.  Returns (n_samples,H)
-    de-quantized sample paths in the ORIGINAL observation units."""
+    """Probabilistic forecast of one or more univariate channels. 
+    If context is (L,), returns (n_samples, H).
+    If context is (C, L), returns (C, n_samples, H) in ORIGINAL units."""
     device = next(model.parameters()).device
     ctx = model.ctx
-    s = quant.scale(context)
-    ctok = quant.quantize(context, s)
-    if len(ctok) < ctx:
-        ctok = np.concatenate([np.full(ctx - len(ctok), ctok[0]), ctok])
-    ctok = ctok[-ctx:]
-    base = _long(ctok)[None].repeat(n_samples, 1).to(device)   # (S, ctx)
-    out = np.zeros((n_samples, H), dtype=np.int64)
+    
+    is_1d = (context.ndim == 1)
+    if is_1d:
+        context = context[None, :]
+        
+    C, L = context.shape
+    s_arr = np.mean(np.abs(context), axis=1)
+    s_arr = np.where(s_arr > 1e-6, s_arr, 1.0)
+    
+    ctok = quant.quantize(context, s_arr)
+    if L < ctx:
+        pad = np.repeat(ctok[:, 0:1], ctx - L, axis=1)
+        ctok = np.concatenate([pad, ctok], axis=1)
+    ctok = ctok[:, -ctx:]
+    
+    base = _long(ctok).repeat_interleave(n_samples, dim=0).to(device)
+    out = np.zeros((C * n_samples, H), dtype=np.int64)
+    
     for h in range(H):
         logits = model(base)[:, -1, :] / temperature
         probs = torch.softmax(logits, dim=-1)
-        nxt = torch.multinomial(probs, 1)                      # (S,1)
+        nxt = torch.multinomial(probs, 1)                      
         out[:, h] = np.asarray(nxt[:, 0].cpu().tolist(), dtype=np.int64)
         base = torch.cat([base[:, 1:], nxt], dim=1)
-    return quant.dequantize(out, s)                            # (S, H) real units
+        
+    s_rep = np.repeat(s_arr, n_samples)
+    out_real = quant.dequantize(out, s_rep)
+    out_real = out_real.reshape(C, n_samples, H)
+    
+    if is_1d:
+        return out_real[0]
+    return out_real
 
 
 @torch.no_grad()

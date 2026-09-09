@@ -18,6 +18,3 @@ __pycache__/
 *.log
 *.aux
 *.out
-tsfm/data/
-tsfm/checkpoints/
-tsfm/evals/
