@@ -66,7 +66,7 @@ class MeanScaleQuantizer:
         else:
             xs = np.asarray(x) / s
             
-        dx = 20.0 / (self.B - 1)
+        dx = (self.q_hi - self.q_lo) / (self.B - 1)
         idx = np.floor((xs - self.edges[0]) / dx) + 1
         return np.clip(idx, 0, self.B - 1).astype(np.int64)
 

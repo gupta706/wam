@@ -31,7 +31,7 @@ def evaluate_model(name, model, quant, test_traj, H, out_dir):
     print(f"Forecasting {H_actual} steps ahead...")
     # Use a low temperature (0.1) to make the categorical sampling nearly deterministic,
     # preventing harsh random jumps that make the physical trajectories look disconnected.
-    fc = forecast_channel(model, quant, context, H=H_actual, n_samples=30, temperature=0.1)
+    fc = forecast_channel(model, quant, context, H=H_actual, n_samples=30, temperature=0.7)
     pred_mean = fc.mean(0)
     
     rmse = np.sqrt(np.mean((pred_mean - truth)**2))
@@ -41,15 +41,20 @@ def evaluate_model(name, model, quant, test_traj, H, out_dir):
     fig, ax = plt.subplots(figsize=(8, 4))
     
     time_ctx = np.arange(ctxlen)
-    time_pred = np.arange(ctxlen, ctxlen + H_actual)
+    time_pred = np.arange(ctxlen - 1, ctxlen + H_actual)
     
     ax.plot(time_ctx, context, color='black', label='Context')
-    ax.plot(time_pred, truth, color='blue', label='Ground Truth')
+    
+    truth_plot = np.concatenate([[context[-1]], truth])
+    ax.plot(time_pred, truth_plot, color='blue', label='Ground Truth')
     
     # Plot samples
     for i in range(min(10, fc.shape[0])):
-        ax.plot(time_pred, fc[i], color='red', alpha=0.1)
-    ax.plot(time_pred, pred_mean, color='red', label='TSFM Mean Forecast')
+        fc_plot = np.concatenate([[context[-1]], fc[i]])
+        ax.plot(time_pred, fc_plot, color='red', alpha=0.1)
+    
+    pred_mean_plot = np.concatenate([[context[-1]], pred_mean])
+    ax.plot(time_pred, pred_mean_plot, color='red', label='TSFM Mean Forecast')
     
     ax.set_title(f'TSFM Forecast on {name} (Checkpoint)')
     ax.legend()

@@ -9,15 +9,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Visualization Outputs
-*.jpg
-
 
 # macOS
 .DS_Store
-data/
+
 
 # tex files
 *.log
 *.aux
 *.out
+tsfm/data/
+tsfm/checkpoints/
+tsfm/evals/
