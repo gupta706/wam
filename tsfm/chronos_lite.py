@@ -159,7 +159,7 @@ def make_token_windows(trajectories: list, quant: MeanScaleQuantizer, ctx: int,
 def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
                d_model: int = 64, n_layer: int = 2, batch: int = 256,
                max_batches: int = None,
-               lr: float = 3e-3, seed: int = 0, verbose: bool = False):
+               lr: float = 3e-4, seed: int = 0, verbose: bool = False):
     """Train the tiny TS language model by cross-entropy next-token loss."""
     torch.manual_seed(seed)
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu')
@@ -167,6 +167,12 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     
     n = len(windows)
+    
+    total_batches = (n + batch - 1) // batch
+    if max_batches is not None:
+        total_batches = min(total_batches, max_batches)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs * total_batches, eta_min=1e-5)
+    
     lossfn = nn.CrossEntropyLoss()
     
     import time
@@ -180,6 +186,7 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
     for ep in range(epochs):
         perm = torch.randperm(n) # CPU permutation
         tot = 0.0
+        samples_processed = 0
         for i in range(0, n, batch):
             if max_batches is not None and (i // batch) >= max_batches:
                 break
@@ -197,9 +204,11 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
+            scheduler.step()
             
             batch_loss = float(loss)
             tot += batch_loss * idx.shape[0]
+            samples_processed += idx.shape[0]
             
             # Explicitly free memory to prevent Mac swap thrashing
             del idx, inp, tgt, logits, loss
@@ -209,11 +218,14 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
             if verbose and (i // batch) % 20 == 0:
                 current_time = time.time()
                 elapsed = current_time - last_print_time
-                print(f"      Batch {i // batch + 1}/{(n + batch - 1) // batch}, Current Loss: {batch_loss:.4f}, Time: {elapsed:.2f}s")
+                total_batches = (n + batch - 1) // batch
+                if max_batches is not None:
+                    total_batches = min(total_batches, max_batches)
+                print(f"      Batch {i // batch + 1}/{total_batches}, Current Loss: {batch_loss:.4f}, Time: {elapsed:.2f}s")
                 last_print_time = current_time
                 
         if verbose:
-            epoch_loss = tot / (n + 1e-5)
+            epoch_loss = tot / max(1, samples_processed)
             print(f"    epoch {ep + 1}/{epochs}  CE = {epoch_loss:.4f} nats")
             epoch_losses.append(epoch_loss)
             

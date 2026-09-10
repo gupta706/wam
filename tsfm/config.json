@@ -1,6 +1,6 @@
 {
     "_state_dim_info": "Dimensionality of the state space for the physical environments.",
-    "state_dim": 5,
+    "state_dim": 64,
     "_N_info": "Number of training trajectories to generate/load for each environment.",
     "N": 200,
     "_M_info": "Number of test trajectories to generate/load for each environment.",
@@ -36,7 +36,9 @@
     "_batch_info": "Batch size for training the foundation model.",
     "batch": 128,
     "_max_batches_info": "Maximum number of batches to process per epoch.",
-    "max_batches": 1000,
+    "max_batches": 100,
+    "_lr_info": "Learning rate for the AdamW optimizer during foundation model training.",
+    "lr": 0.0003,
     "_H_info": "Forecast horizon (number of steps to predict into the future) during evaluation.",
     "H": 768
 }
