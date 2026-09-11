@@ -10,10 +10,10 @@ __pycache__/
 *$py.class
 
 
-# macOS
+# Data files
 .DS_Store
-Wtr*
 *.npy 
+*.pt 
 
 # tex files
 *.log

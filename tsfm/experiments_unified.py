@@ -64,7 +64,8 @@ def main():
     print("\n--- Training Unified Foundation Model ---")
     model = train_tslm(Wtr, B=B, ctx=ctx, epochs=config["epochs"], d_model=config["d_model"],
         n_layer=config["n_layer"], batch=config["batch"], max_batches=config.get("max_batches"),
-        lr=config.get("lr", 3e-4), verbose=True, seed=seeds.get("model_train", 0))
+        lr=config.get("lr", 3e-4), seed=seeds.get("model_train", 0),
+        resume_checkpoint=config.get("resume_checkpoint"), verbose=True)
     
     H = config["H"]
     out_dir = os.path.dirname(__file__)

@@ -159,11 +159,17 @@ def make_token_windows(trajectories: list, quant: MeanScaleQuantizer, ctx: int,
 def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
                d_model: int = 64, n_layer: int = 2, batch: int = 256,
                max_batches: int = None,
-               lr: float = 3e-4, seed: int = 0, verbose: bool = False):
+               lr: float = 3e-4, seed: int = 0, resume_checkpoint: str = None, verbose: bool = False):
     """Train the tiny TS language model by cross-entropy next-token loss."""
     torch.manual_seed(seed)
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu')
     model = TinyTSLM(B=B, d_model=d_model, n_layer=n_layer, ctx=ctx).to(device)
+    
+    if resume_checkpoint and os.path.exists(resume_checkpoint):
+        if verbose:
+            print(f"Resuming training from checkpoint: {resume_checkpoint}")
+        model.load_state_dict(torch.load(resume_checkpoint, map_location=device))
+        
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     
     n = len(windows)
