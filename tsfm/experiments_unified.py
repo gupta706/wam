@@ -72,15 +72,18 @@ def main():
     for sys_name in SYSTEMS_REGISTRY.keys():
         evaluate_model(sys_name, model, quant, test_data[sys_name], H, out_dir)
 
-    print("\n--- Pushing to GitHub ---")
-    repo_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    try:
-        subprocess.run(['git', 'add', '.'], cwd=repo_dir, check=True)
-        subprocess.run(['git', 'commit', '-m', 'Update foundation model and evaluation plots'], cwd=repo_dir, check=True)
-        subprocess.run(['git', 'push'], cwd=repo_dir, check=True)
-        print("Successfully pushed to GitHub!")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to push to GitHub. Error: {e}")
+    if os.environ.get("MODAL_IMAGE_ID"):
+        print("\n--- Skipping GitHub Push (Running on Modal) ---")
+    else:
+        print("\n--- Pushing to GitHub ---")
+        repo_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        try:
+            subprocess.run(['git', 'add', '.'], cwd=repo_dir, check=True)
+            subprocess.run(['git', 'commit', '-m', 'Update foundation model and evaluation plots'], cwd=repo_dir, check=True)
+            subprocess.run(['git', 'push'], cwd=repo_dir, check=True)
+            print("Successfully pushed to GitHub!")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to push to GitHub. Error: {e}")
 
 if __name__ == "__main__":
     main()

@@ -170,7 +170,7 @@ def train_tslm(windows: np.ndarray, B: int, ctx: int, epochs: int = 6,
             print(f"Resuming training from checkpoint: {resume_checkpoint}")
         model.load_state_dict(torch.load(resume_checkpoint, map_location=device))
         
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-5)
     
     n = len(windows)
     
