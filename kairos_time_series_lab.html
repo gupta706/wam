@@ -1488,6 +1488,141 @@
 
     .footer-brand .logo { font-size: 24px; }
     .footer-text { font-size: 13px; color: var(--muted); }
+  
+    /* ==========================================================================
+       EQUATION ANATOMY & PLAIN-ENGLISH EXPLAINER STYLES
+       ========================================================================== */
+    .equation-anatomy-box {
+      background: #FFFFFF;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      margin: 18px 0 22px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .equation-anatomy-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line-subtle);
+    }
+
+    .equation-anatomy-header h4 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .equation-display-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px 18px;
+      background: #F8FAFC;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      margin-bottom: 18px;
+    }
+
+    .term-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .term-chip.red { background: var(--red-soft); color: var(--red); border-color: var(--red-border); }
+    .term-chip.blue { background: var(--blue-soft); color: var(--blue); border-color: var(--blue-border); }
+    .term-chip.purple { background: var(--purple-soft); color: var(--purple); border-color: #DDD6FE; }
+    .term-chip.green { background: var(--green-soft); color: var(--green); border-color: #A7F3D0; }
+    .term-chip.amber { background: var(--amber-soft); color: var(--amber); border-color: #FDE68A; }
+    .term-chip.slate { background: #F1F5F9; color: var(--ink); border-color: #CBD5E1; }
+
+    .term-math {
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+
+    .term-sublabel {
+      font-family: var(--sans);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 4px;
+    }
+
+    .plain-english-box {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-left: 4px solid #D97706;
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 14px;
+      color: #92400E;
+      line-height: 1.6;
+    }
+
+    .analogy-box {
+      background: #EFF6FF;
+      border: 1px solid var(--blue-border);
+      border-left: 4px solid var(--blue);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 14px;
+      color: #1E40AF;
+      line-height: 1.6;
+    }
+
+    .symbol-glossary-table {
+      width: 100%;
+      margin-top: 14px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .symbol-glossary-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: #F1F5F9;
+      color: var(--ink-secondary);
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .symbol-glossary-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line-subtle);
+      color: var(--ink-secondary);
+      vertical-align: top;
+    }
+
+    .symbol-glossary-table td:first-child {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--red);
+      width: 130px;
+      white-space: nowrap;
+    }
+
   </style>
 </head>
 <body>
@@ -2312,42 +2447,93 @@ meaning: Raw continuous historical observations</pre>
     }
 
     // Mathematical Literature Review Stepper Data
+    
+    // Mathematical Literature Review Stepper Data with Detailed Equation Anatomy & Plain-English Explanations
     const litTiers = [
       {
         tag: "TIER 0 · PROBABILITY & MEASURE-THEORETIC BASICS",
         title: "Stochastic Processes, Stationarity & Optimal Projections",
         eq: "X = { X_t(ω) : t ∈ T, ω ∈ Ω },   X̂_{t+h} = E[ X_{t+h} | F_t ]",
         summary: "A time series is an indexed family of random variables on a probability space (Ω, F, P). Under filtration F_t = σ({X_s : s ≤ t}), the optimal minimum mean squared error (MMSE) forecast is the orthogonal conditional projection E[X_{t+h} | F_t] in Hilbert space L².",
-        points: [
-          "<strong>Strict Stationarity:</strong> Joint distribution of (X_{t_1}, ..., X_{t_k}) is invariant under any shift τ. Preserves multi-point probability geometry.",
-          "<strong>Weak (Wide-Sense) Stationarity:</strong> Mean is constant (E[X_t] = μ) and autocovariance depends only on lag k: γ(s, t) = Cov(X_s, X_t) = γ(s - t) = γ(k).",
-          "<strong>Autocorrelation (ACF) & PACF:</strong> ρ(k) = γ(k)/γ(0) measures linear memory. PACF isolates conditional dependence eliminating intervening lags.",
-          "<strong>Herglotz's Spectral Theorem:</strong> Every covariance-stationary process has an orthogonal spectral decomposition f(λ) = (1/2π) Σ γ(k) e^{-ikλ} across frequencies λ ∈ [-π, π]."
+        plainEnglish: "The single best forecast you can mathematically make is the probability-weighted center of gravity of all possible futures, calculated using all information collected up to the present moment.",
+        analogy: "Predicting where a tennis ball will land. Because of wind gusts you cannot know the exact millimeter, but given its flight trajectory so far (F_t), there is an average expected landing point.",
+        chips: [
+          { math: "X̂_{t+h}", label: "Optimal Forecast", color: "red" },
+          { math: "=", label: "Equals", color: "slate" },
+          { math: "E[ · ]", label: "Expectation", color: "blue" },
+          { math: "X_{t+h}", label: "True Future", color: "purple" },
+          { math: "|", label: "Given", color: "slate" },
+          { math: "F_t", label: "Known History", color: "amber" }
         ],
-        takeaway: "Significance: Stationarity guarantees that patterns observed in the past remain informative for the future. Transformers learn parameterized approximations of these conditional expectations."
+        symbols: [
+          { sym: "X̂_{t+h}", name: "Predictor", desc: "The point estimate for future timestep t+h." },
+          { sym: "E[ · ]", name: "Expectation", desc: "The probability-weighted mean of all possible realizations." },
+          { sym: "F_t", name: "Filtration", desc: "The σ-algebra representing all information observed up to time t." },
+          { sym: "γ(k)", name: "Autocovariance", desc: "Cov(X_s, X_{s+k}): measures how past states relate to future states across lag k." },
+          { sym: "f(λ)", name: "Spectral Density", desc: "The frequency distribution decomposing variance into periodic waves." }
+        ],
+        points: [
+          "<strong>Strict Stationarity:</strong> Joint distribution of (X_{t_1}, ..., X_{t_k}) is invariant under any temporal shift τ.",
+          "<strong>Weak (Wide-Sense) Stationarity:</strong> Mean is constant (E[X_t] = μ) and autocovariance depends only on lag k: γ(k) = Cov(X_s, X_{s+k}).",
+          "<strong>Autocorrelation (ACF) & PACF:</strong> ρ(k) = γ(k)/γ(0) measures memory. PACF isolates direct correlation eliminating intervening steps.",
+          "<strong>Herglotz's Spectral Theorem:</strong> Every covariance-stationary process has an orthogonal spectral decomposition f(λ) = (1/2π) Σ γ(k) e^{-ikλ}."
+        ],
+        takeaway: "Significance: Stationarity guarantees that patterns observed in the past remain informative for the future. Foundation models learn universal approximations of these conditional expectations."
       },
       {
         tag: "TIER 1 · CLASSICAL LINEAR DECOMPOSITION THEORY",
         title: "Wold's Decomposition Theorem & The ARMA Family",
         eq: "X_t = Σ_{j=0}^∞ ψ_j ε_{t-j} + V_t,   with Σ ψ_j² < ∞   (Wold, 1938)",
         summary: "Herman Wold (1938) proved that any covariance-stationary process uniquely decomposes into a purely indeterministic infinite moving average of white noise innovations ε_t plus a deterministic component V_t. This establishes the theoretical validity of linear filter representations.",
-        points: [
-          "<strong>Autoregressive Process AR(p):</strong> Φ(B)X_t = ε_t. Stationarity requires all characteristic roots of Φ(z) = 1 - Σ φ_i z^i = 0 to lie strictly outside the complex unit circle (|z| > 1).",
-          "<strong>Moving Average MA(q):</strong> X_t = Θ(B)ε_t. Invertibility requires roots of Θ(z) = 0 to lie strictly outside the unit circle, enabling conversion to an AR(∞).",
-          "<strong>ARIMA(p, d, q):</strong> Handles non-stationary stochastic trends by differencing d times: Φ(B)(1 - B)^d X_t = Θ(B)ε_t.",
-          "<strong>Exponential Smoothing (ETS):</strong> Recursively weights past observations with exponentially decaying weights; Hyndman proved exact equivalence to linear state-space models."
+        plainEnglish: "Any stationary time series is mathematically composed of just two things: predictable background rhythms (like tides or sunrise, V_t) plus the fading echoes of past random surprises (Σ ψ_j ε_{t-j}).",
+        analogy: "An echo in a canyon. A rock falls into the lake (j steps ago); the splash is gone, but the rippling waves (ψ_j) still rock your boat today.",
+        chips: [
+          { math: "X_t", label: "Observed Value", color: "slate" },
+          { math: "=", label: "Decomposes To", color: "slate" },
+          { math: "Σ ψ_j ε_{t-j}", label: "Echoes of Shocks", color: "blue" },
+          { math: "+", label: "Plus", color: "slate" },
+          { math: "V_t", label: "Deterministic Cycle", color: "green" }
         ],
-        takeaway: "Significance: Wold's theorem guarantees that any stationary series can be approximated by linear combinations of causal innovations. Modern TSFMs generalize this to deep, nonlinear representations."
+        symbols: [
+          { sym: "X_t", name: "Current State", desc: "The observable value at timestep t." },
+          { sym: "ε_{t-j}", name: "Innovation", desc: "White noise shock that occurred j steps in the past." },
+          { sym: "ψ_j", name: "Filter Weights", desc: "Decay coefficients showing how long a past surprise influences current states." },
+          { sym: "V_t", name: "Deterministic Component", desc: "Components predictable with zero variance (sine waves, tides, sunrise)." },
+          { sym: "Φ(B)", name: "AR Polynomial", desc: "Roots must lie outside unit circle |z|>1 for stationarity." }
+        ],
+        points: [
+          "<strong>Autoregressive Process AR(p):</strong> Φ(B)X_t = ε_t. Characteristic roots of Φ(z) = 0 must lie strictly outside the unit circle (|z| > 1).",
+          "<strong>Moving Average MA(q):</strong> X_t = Θ(B)ε_t. Invertibility requires roots of Θ(z) = 0 outside the unit circle, enabling conversion to AR(∞).",
+          "<strong>ARIMA(p, d, q):</strong> Handles non-stationary stochastic trends by differencing d times: Φ(B)(1 - B)^d X_t = Θ(B)ε_t.",
+          "<strong>Exponential Smoothing (ETS):</strong> Recursively weights observations with exponentially decaying weights; equivalent to linear state-space models."
+        ],
+        takeaway: "Significance: Wold's theorem proves that any stationary series can be approximated by linear filters of innovations. Foundation models generalize this to multi-scale deep nonlinear filter banks."
       },
       {
         tag: "TIER 2 · STATE-SPACE MODELS & HIDDEN MARKOV DYNAMICS",
         title: "State-Space Formulations & The Kalman Filter",
         eq: "h_t = F_t h_{t-1} + G_t η_t,   y_t = H_t h_t + ε_t,   K_t = P_{t|t-1} H_t^T (H_t P_{t|t-1} H_t^T + R_t)^{-1}",
         summary: "State-space models separate the unobserved latent physical state h_t from noisy measurements y_t. R. E. Kalman (1960) developed the optimal recursive linear quadratic estimator (the Kalman Filter).",
+        plainEnglish: "The Kalman Gain (K_t) is an automatic trust slider between 0 and 1. When your sensor is noisy (R_t >> P), the filter ignores it and trusts the physics model. When your sensor is crystal-clear (R_t ≈ 0), it trusts the sensor.",
+        analogy: "Driving in dense fog with a GPS. When GPS satellite reception is weak and erratic, you rely on your odometer and speedometer; on an open highway, you trust the GPS.",
+        chips: [
+          { math: "K_t", label: "Trust Slider [0, 1]", color: "red" },
+          { math: "=", label: "Ratio", color: "slate" },
+          { math: "P_{t|t-1} H_t^T", label: "Model Uncertainty", color: "blue" },
+          { math: "÷", label: "Divided By", color: "slate" },
+          { math: "[H P H^T + R_t]", label: "Model Unc. + Sensor Noise", color: "amber" }
+        ],
+        symbols: [
+          { sym: "h_t", name: "Hidden State", desc: "The true underlying physical quantity (e.g. true rocket position & velocity)." },
+          { sym: "y_t", name: "Measurement", desc: "The noisy reading from physical sensors." },
+          { sym: "K_t", name: "Kalman Gain", desc: "Blending weight dictating how much to correct the state estimate using fresh measurements." },
+          { sym: "P_{t|t-1}", name: "State Covariance", desc: "Uncertainty of the model's forward prediction before seeing data." },
+          { sym: "R_t", name: "Measurement Noise", desc: "Sensor error variance." }
+        ],
         points: [
-          "<strong>Predict Step:</strong> Advances the latent state estimate ĥ_{t|t-1} = F_t ĥ_{t-1|t-1} and propagates the covariance matrix P_{t|t-1} = F_t P_{t-1|t-1} F_t^T + Q_t.",
-          "<strong>Correct Step:</strong> Calculates the innovation residual ỹ_t = y_t - H_t ĥ_{t|t-1} and updates state via optimal Kalman Gain K_t.",
-          "<strong>Nonlinear Extensions:</strong> Extended Kalman Filter (EKF) linearizes via first-order Taylor expansion; Unscented Kalman Filter (UKF) uses deterministically chosen sigma points; Particle Filtering utilizes Sequential Monte Carlo.",
+          "<strong>Predict Step:</strong> Advances the latent state estimate ĥ_{t|t-1} = F_t ĥ_{t-1|t-1} and propagates covariance P_{t|t-1} = F_t P_{t-1|t-1} F_t^T + Q_t.",
+          "<strong>Correct Step:</strong> Calculates innovation residual ỹ_t = y_t - H_t ĥ_{t|t-1} and updates state via optimal gain K_t.",
+          "<strong>Nonlinear Extensions:</strong> Extended Kalman Filter (EKF) uses Taylor linearization; Unscented Kalman Filter (UKF) uses sigma points; Particle Filters use Monte Carlo sampling.",
           "<strong>Structural Time Series:</strong> Explicitly models unobserved components: trend, slope, seasonal harmonics, and cycle."
         ],
         takeaway: "Significance: State-space models introduced the modern paradigm of hidden latent states evolving through time, directly inspiring recurrent networks and transformer latent representations."
@@ -2355,10 +2541,26 @@ meaning: Raw continuous historical observations</pre>
       {
         tag: "TIER 3 · DEEP SEQUENCE MODELS & PROBABILISTIC LOSSES",
         title: "Recurrent Networks, LSTMs & Probabilistic DeepAR",
-        eq: "h_t = tanh(W_{hh} h_{t-1} + W_{xh} x_t),   L(Θ) = -Σ log p(x_t | θ(h_t))",
+        eq: "h_t = tanh(W_{hh} h_{t-1} + W_{xh} x_t),   ∂L/∂h_t = ∂L/∂h_T · Π W_{hh}^T diag(1 - tanh²)",
         summary: "Deep learning models replaced hand-crafted equations with parameterized nonlinear neural networks. However, standard RNNs suffered from vanishing gradients across long horizons.",
+        plainEnglish: "When training standard RNNs across 100 steps, you multiply numbers strictly less than 1 over and over. By the time the gradient travels back 50 steps, it shrinks to zero, so the network completely forgets early history.",
+        analogy: "The game of Telephone (whispering down the lane). After a message passes through 30 people, the original words fade into complete silence.",
+        chips: [
+          { math: "∂L/∂h_t", label: "Learning Signal", color: "red" },
+          { math: "=", label: "Product", color: "slate" },
+          { math: "∂L/∂h_T", label: "Final Loss Grad", color: "slate" },
+          { math: "Π W_{hh}^T", label: "Matrix Product", color: "purple" },
+          { math: "(1 - tanh²)", label: "Derivative (< 1)", color: "amber" }
+        ],
+        symbols: [
+          { sym: "h_t", name: "Hidden Vector", desc: "Memory state compressing temporal context." },
+          { sym: "W_{hh}", name: "Recurrent Weights", desc: "Transition matrix mapping previous state to current state." },
+          { sym: "∂L/∂h_t", name: "Backprop Gradient", desc: "The sensitivity of loss with respect to early memory." },
+          { sym: "f_t", name: "LSTM Forget Gate", desc: "Additive gate preserving constant gradient highway when f_t ≈ 1." },
+          { sym: "θ = (μ, σ)", name: "DeepAR Likelihood", desc: "Predicts full distribution parameters rather than single point." }
+        ],
         points: [
-          "<strong>Gradient Vanishing Proof:</strong> Backpropagation through time involves the Jacobian product Π (∂h_k/∂h_{k-1}) = Π W_{hh}^T diag(1 - tanh²). If spectral radius ρ(W_{hh}) < 1, error signals decay exponentially as O(γ^{T-t}).",
+          "<strong>Gradient Vanishing Proof:</strong> Backpropagation through time involves Π (∂h_k/∂h_{k-1}) = Π W_{hh}^T diag(1 - tanh²). If spectral radius ρ(W_{hh}) < 1, error signals decay exponentially as O(γ^{T-t}).",
           "<strong>LSTM Solution:</strong> Hochreiter & Schmidhuber (1997) introduced an additive cell state c_t = f_t ⊙ c_{t-1} + i_t ⊙ c̃_t. The derivative ∂c_t/∂c_{t-1} = f_t creates a constant error carousel that avoids exponential decay when f_t ≈ 1.",
           "<strong>Temporal Convolutional Networks (TCN):</strong> Utilizes causal dilated 1D convolutions with exponentially expanding dilation factors (d = 1, 2, 4, 8) to achieve O(2^L · K) receptive fields.",
           "<strong>DeepAR (Amazon, 2019):</strong> Replaced single-point forecasts with parametric distribution heads θ = (μ, σ), maximizing the exact log-likelihood of future paths across thousands of cross-series datasets."
@@ -2370,6 +2572,22 @@ meaning: Raw continuous historical observations</pre>
         title: "PatchTST: Sub-Series Tokenization & Quadratic Speedup",
         eq: "p_i ∈ R^P,   N = L/P,   O(N²) = (1/P²) O(L²)   [256× to 1024× Attention Acceleration]",
         summary: "Early point-wise transformers treated each single scalar point x_t as a token. This failed due to semantic poverty (a single number carries no slope) and quadratic memory explosion O(L²). PatchTST (ICLR 2023) revolutionized the field through continuous subseries patching.",
+        plainEnglish: "Instead of treating every individual number as a token, we group contiguous chunks of P=32 points into a single patch token. This reduces token count by 32, shrinking quadratic attention memory and compute by 32² = 1024×, while preserving local slopes!",
+        analogy: "Reading a book paragraph-by-paragraph instead of letter-by-letter. You read 1000× faster and understand the meaning much better!",
+        chips: [
+          { math: "p_i ∈ R^P", label: "Patch Token (P=32)", color: "blue" },
+          { math: "N = L/P", label: "32 Tokens vs 1024", color: "green" },
+          { math: "O(N²)", label: "Attention Cost", color: "slate" },
+          { math: "=", label: "Is Exactly", color: "slate" },
+          { math: "(1/P²) O(L²)", label: "1024× Quadratic Boost", color: "red" }
+        ],
+        symbols: [
+          { sym: "L", name: "Lookback Length", desc: "Total historical context (e.g. 1024 timestamps)." },
+          { sym: "P", name: "Patch Size", desc: "Number of contiguous observations grouped into one token (typically 16 or 32)." },
+          { sym: "N", name: "Token Count", desc: "Effective sequence length fed into transformer attention (N = L/P = 32)." },
+          { sym: "W_e", name: "Linear Projection", desc: "Weights projecting R^P patch vector into model dimension R^{d_model}." },
+          { sym: "RevIN", name: "Reversible Norm", desc: "Normalizes distribution shifts on input and restores original scale on output." }
+        ],
         points: [
           "<strong>The Patching Transformation:</strong> Continuous window of length P is projected linearly via z_i = W_e p_i + b_e into R^{d_model}. Preserves local phase, trend, and derivative within each patch.",
           "<strong>The Quadratic Speedup Proof:</strong> Stride S = P drops effective sequence length to N = L/P. Attention complexity across tokens becomes O((L/P)²) = (1/P²) O(L²). For P = 32, this delivers a <strong>1024× reduction</strong> in memory and compute!",
@@ -2383,6 +2601,23 @@ meaning: Raw continuous historical observations</pre>
         title: "Chronos, TimesFM 3.0 & Google Research TimesFM-ICF",
         eq: "S = [ e_1, [SEP], e_2, [SEP], ..., x^{hist} ],   MASE: 1.000 (Zero-Shot) → 0.934 (Few-Shot ICF)",
         summary: "Foundation models pre-train on hundreds of billions of time points (Wikipedia, traffic, web queries, weather, synthetic ODEs) to perform universal zero-shot forecasting. In 2025, Google Research transformed them into few-shot in-context learners.",
+        plainEnglish: "We feed the model examples of how other stores behaved, but separate them with a learnable digital 'stop sign' ([SEP]). This allows self-attention to borrow general seasonal rhythms without mixing up raw sales volumes between different stores!",
+        analogy: "Punctuation in written language. Without commas, periods, and paragraphs, words from different sentences blend into chaotic nonsense. Separator tokens are the punctuation of time series!",
+        chips: [
+          { math: "e_1", label: "Store 1 Example", color: "blue" },
+          { math: "[SEP]", label: "Digital Stop Sign", color: "red" },
+          { math: "e_2", label: "Store 2 Example", color: "blue" },
+          { math: "[SEP]", label: "Digital Stop Sign", color: "red" },
+          { math: "x^{hist}", label: "Target Series", color: "slate" },
+          { math: "→ 0.934", label: "SFT Quality (0 Steps)", color: "green" }
+        ],
+        symbols: [
+          { sym: "S", name: "Prompt Sequence", desc: "Concatenated input containing in-context demonstrations and target series." },
+          { sym: "v_{[SEP]}", name: "Separator Token", desc: "Learnable embedding vector in R^{d_model} that prevents cross-example mean collapse." },
+          { sym: "e_k", name: "In-Context Shot", desc: "An auxiliary series (e.g. nearby store or historical event) containing history and outcome." },
+          { sym: "MASE", name: "Benchmark Metric", desc: "Mean Absolute Scaled Error: 0.934 matches supervised fine-tuning with zero backprop." },
+          { sym: "Chronos", name: "Quantized FM", desc: "Binned values converted to discrete vocabulary tokens on a T5 backbone." }
+        ],
         points: [
           "<strong>Chronos (Amazon Science):</strong> Quantizes continuous real numbers into discrete vocabulary buckets and trains a T5 language model via standard cross-entropy loss.",
           "<strong>TimesFM 3.0 (Google Research):</strong> High-capacity decoder-only transformer pre-trained on 200B+ points. Features asymmetric patching (P_{in}=32, P_{out}=128) for ultra-fast multi-horizon decoding.",
@@ -2396,6 +2631,21 @@ meaning: Raw continuous historical observations</pre>
         title: "Takens' Delay Embedding & Attractor Reconstruction (WAM)",
         eq: "Ψ(s) = ( y(s), y(Φ^{-τ}(s)), ..., y(Φ^{-(m-1)τ}(s)) )^T ∈ R^m,   provided m > 2d",
         summary: "To prove whether a foundation model learns true physical dynamics rather than superficial memorization, research platforms benchmark models on controlled nonlinear physical attractors.",
+        plainEnglish: "Even if a physical system has 50 hidden variables and you can only measure ONE sensor over time (x_t), you can mathematically reconstruct the entire multi-dimensional geometric attractor by creating delayed copies of that single sensor!",
+        analogy: "Reconstructing the 3D shape and movement of an invisible dancing person purely by watching the single shadow cast by their hand on a wall over time.",
+        chips: [
+          { math: "Ψ(s)", label: "Delay Embedding", color: "red" },
+          { math: "=", label: "Vector of Lags", color: "slate" },
+          { math: "[y(s), y_{s-τ}, ...]", label: "Delayed Sensor Copies", color: "blue" },
+          { math: "m > 2d", label: "Whitney Embedding Bound", color: "amber" }
+        ],
+        symbols: [
+          { sym: "x_t / y(s)", name: "Scalar Sensor", desc: "Single observable channel measured over time." },
+          { sym: "τ", name: "Delay Lag", desc: "Step spacing between delay coordinates." },
+          { sym: "m", name: "Embedding Dim", desc: "Number of delayed coordinates needed (must exceed 2 × attractor dimension)." },
+          { sym: "D_{KY}", name: "Kaplan-Yorke Dim", desc: "Fractal dimension of chaotic attractor computed from Lyapunov spectrum." },
+          { sym: "Kuramoto", name: "Benchmark ODE", desc: "200 coupled phase oscillators testing community synchronization forecasting." }
+        ],
         points: [
           "<strong>Takens' Delay Embedding Theorem (1981):</strong> For a smooth attractor manifold M of dimension d, delay coordinate vectors of dimension m > 2d reconstruct a manifold diffeomorphic to the original phase space.",
           "<strong>Kaplan-Yorke (Lyapunov) Dimension:</strong> Measures the effective fractal degrees of freedom of a chaotic attractor: D_{KY} = j + (Σ λ_i) / |λ_{j+1}|.",
@@ -2407,7 +2657,7 @@ meaning: Raw continuous historical observations</pre>
       }
     ];
 
-    function showLitTier(idx, btn) {
+        function showLitTier(idx, btn) {
       if (btn) {
         document.querySelectorAll('.lit-stepper-strip .lit-step-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -2418,6 +2668,21 @@ meaning: Raw continuous historical observations</pre>
 
       let pointsHtml = t.points.map(p => `<li>${p}</li>`).join('');
 
+      let chipsHtml = t.chips.map(c => `
+        <div class="term-chip ${c.color}">
+          <span class="term-math">${c.math}</span>
+          <span class="term-sublabel">${c.label}</span>
+        </div>
+      `).join('');
+
+      let symbolsHtml = t.symbols.map(s => `
+        <tr>
+          <td>${s.sym}</td>
+          <td><strong>${s.name}</strong></td>
+          <td>${s.desc}</td>
+        </tr>
+      `).join('');
+
       container.innerHTML = `
         <div class="lit-step-header">
           <div>
@@ -2426,9 +2691,45 @@ meaning: Raw continuous historical observations</pre>
           </div>
           <span class="badge-chip blue">Tier 0${idx}</span>
         </div>
-        <div class="lit-math-block">
-          <strong>Key Formulation:</strong> <code>${t.eq}</code>
+
+        <!-- Demystified Equation Anatomy Box -->
+        <div class="equation-anatomy-box">
+          <div class="equation-anatomy-header">
+            <h4><span>📐</span> Equation Anatomy & Color-Coded Breakdown</h4>
+            <span class="badge-chip red">Plain-English Demystifier</span>
+          </div>
+
+          <div class="equation-display-row">
+            ${chipsHtml}
+          </div>
+
+          <div class="plain-english-box">
+            <strong>💬 In Plain English:</strong> ${t.plainEnglish}
+          </div>
+
+          <div class="analogy-box">
+            <strong>💡 Real-World Mental Model (Analogy):</strong> ${t.analogy}
+          </div>
+
+          <div style="margin-top:16px;">
+            <h5 style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px;">
+              Component Symbol Glossary & Operational Meaning
+            </h5>
+            <table class="symbol-glossary-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Mathematical Name</th>
+                  <th>Operational Role in Model / Pipeline</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${symbolsHtml}
+              </tbody>
+            </table>
+          </div>
         </div>
+
         <p class="plain-p" style="margin-bottom:12px;">${t.summary}</p>
         <ul class="lit-points-list">
           ${pointsHtml}
