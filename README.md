@@ -6,7 +6,7 @@ To maximize performance across platforms while avoiding architecture-specific co
 
 ## Time-Series Foundation Model Study
 
-Check out the [interactive study on Time-Series Foundation Models](https://dipayandey1244.github.io/time-series-foundation-model/). It follows the papers from their central claims through architecture, equations, benchmark evidence and limitations, with animated explanations and original paper figures. The self-contained HTML and figure assets are also included in [`study/`](study/).
+Check out the [interactive study on Time-Series Foundation Models](https://dipayandey1244.github.io/time-series-foundation-model/). It follows the papers from their central claims through architecture, equations, benchmark evidence and limitations, with animated explanations and original paper figures. 
 
 ## Models Included
 
