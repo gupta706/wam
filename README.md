@@ -103,10 +103,7 @@ The design encourages five coarse communities; inspect the order-parameter curve
 Implemented in [environment/stuart_landau.py](environment/stuart_landau.py).
 
 $$
-\dot{z}_i =
-(\lambda_i + i\omega_i)z_i
-- |z_i|^2z_i
-+ \sum_{j=1}^{N}K_{ij}(z_j-z_i)
+\dot{z}_i = (\lambda_i + i\omega_i)z_i - |z_i|^2 z_i + \sum_{j=1}^{N} K_{ij}(z_j-z_i)
 $$
 
 The complex state $z_i$ encodes amplitude and phase. The linear term supports growth and rotation, the cubic term limits amplitude near a Hopf bifurcation, and coupling communicates state between oscillators.
