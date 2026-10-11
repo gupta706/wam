@@ -50,13 +50,13 @@ Choose a model to open its interactive walkthrough. Each page combines the high-
 
 | Interactive walkthrough | Research connection |
 |---|---|
-| [Open Multi-population Kuramoto →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto) | Power-grid synchronization |
-| [Open Cluster-synchronized Stuart–Landau →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau) | Neural population dynamics |
-| [Open Kuramoto–Sivashinsky →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky) | Flame-front instabilities |
+| [Open Multi-population Kuramoto →](https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto) | Power-grid synchronization |
+| [Open Cluster-synchronized Stuart–Landau →](https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#stuart-landau) | Neural population dynamics |
+| [Open Kuramoto–Sivashinsky →](https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto-sivashinsky) | Flame-front instabilities |
 
 ### 1. Multi-population Kuramoto model
 
-[**▶ Open the animated Kuramoto walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto)
+[**▶ Open the animated Kuramoto walkthrough**](https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto)
 
 Implemented in [environment/kuramoto.py](environment/kuramoto.py).
 
@@ -79,9 +79,9 @@ $$
 
 [Open the Kuramoto result image](visualizations/kuramoto_results.png) · [simulation script](visualizations/vis_kuramoto.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto"><img src="visualizations/kuramoto_animation.gif" alt="High-definition animated Kuramoto phase histories and synchrony curves; click to explore the simulation" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto"><img src="visualizations/kuramoto_animation.gif" alt="High-definition animated Kuramoto phase histories and synchrony curves; click to explore the simulation" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto">Open the interactive Kuramoto lab: play, pause, scrub time, and inspect each population's synchrony.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto">Open the interactive Kuramoto lab: play, pause, scrub time, and inspect each population's synchrony.</a></p>
 
 **What the animation tells us.** In the left panel, each row is one oscillator and color encodes its phase around the circle; vertical color bands mean many oscillators are at similar phases at the same time. In the right panel, each colored curve is $R_c(t)$ for one population. A rising curve toward 1 is direct evidence of within-group phase alignment in this run. Different groups can each synchronize while keeping different phases, so “synchronized” need not mean all 200 hands point in exactly the same direction.
 
@@ -104,7 +104,7 @@ The design encourages five coarse communities; inspect the order-parameter curve
 
 ### 2. Cluster-synchronized Stuart–Landau network
 
-[**▶ Open the animated Stuart–Landau walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau)
+[**▶ Open the animated Stuart–Landau walkthrough**](https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#stuart-landau)
 
 Implemented in [environment/stuart_landau.py](environment/stuart_landau.py).
 
@@ -123,9 +123,9 @@ The complex state $z_i$ encodes amplitude and phase. The linear term supports gr
 
 [Open the Stuart–Landau result image](visualizations/stuart_landau_results.png) · [simulation script](visualizations/vis_stuart_landau.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau"><img src="visualizations/stuart_landau_animation.gif" alt="High-definition animation of Stuart–Landau amplitudes and complex-plane trajectories; click to explore" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#stuart-landau"><img src="visualizations/stuart_landau_animation.gif" alt="High-definition animation of Stuart–Landau amplitudes and complex-plane trajectories; click to explore" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau">Open the interactive Stuart–Landau lab: follow amplitude growth and rotating trajectories in the complex plane.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#stuart-landau">Open the interactive Stuart–Landau lab: follow amplitude growth and rotating trajectories in the complex plane.</a></p>
 
 **What the animation tells us.** The left panel tracks mean amplitude by cluster: growth away from zero followed by a plateau is the visual signature of nonlinear saturation. In the right panel, each trace is a trajectory in the complex plane $(\Re z,\Im z)$; a loop means the state is oscillating, while traces of the same color that approach similar loops suggest cluster-level similarity. The curves show this chosen simulation, not a measurement of brain activity.
 
@@ -144,7 +144,7 @@ The complex state $z_i$ encodes amplitude and phase. The linear term supports gr
 
 ### 3. Kuramoto–Sivashinsky equation
 
-[**▶ Open the animated Kuramoto–Sivashinsky walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky)
+[**▶ Open the animated Kuramoto–Sivashinsky walkthrough**](https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto-sivashinsky)
 
 Implemented in [environment/kuramoto_sivashinsky.py](environment/kuramoto_sivashinsky.py).
 
@@ -167,9 +167,9 @@ $$
 
 [Open the Kuramoto–Sivashinsky result image](visualizations/ks_results.png) · [simulation script](visualizations/vis_ks.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky"><img src="visualizations/ks_animation.gif" alt="High-definition animated Kuramoto–Sivashinsky field across space and time; click to explore" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto-sivashinsky"><img src="visualizations/ks_animation.gif" alt="High-definition animated Kuramoto–Sivashinsky field across space and time; click to explore" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky">Open the interactive Kuramoto–Sivashinsky lab: scrub through the evolving field and inspect wave formation.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/3cadf47/oscillator_lab.html#kuramoto-sivashinsky">Open the interactive Kuramoto–Sivashinsky lab: scrub through the evolving field and inspect wave formation.</a></p>
 
 **What the animation tells us.** The heatmap is a space–time record: horizontal position is $x$, vertical position is elapsed time, and color is the value of $u$. Each new row adds the next saved numerical state. Bands or cells that bend, merge, or break indicate evolving spatial patterns; the displayed color range is shared across frames so color changes remain comparable through time.
 
