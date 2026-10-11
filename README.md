@@ -21,7 +21,7 @@ $$
 
 The observed context $y_{1:t}$ ends at time $t$. A learned forecasting function $f_\theta$, with parameters $\theta$, maps that history to estimates for the next $H$ time steps. Some foundation forecasters also represent uncertainty or return quantiles; this expression shows the basic history-to-horizon relationship.
 
-### 2. Promptable vision
+### 2. Visiion Models
 
 $$
 \hat{M}_{1:T} = f_\theta(X_{1:T}, q)
