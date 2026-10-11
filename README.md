@@ -50,13 +50,13 @@ Choose a model to open its interactive walkthrough. Each page combines the high-
 
 | Interactive walkthrough | Research connection |
 |---|---|
-| [Open Multi-population Kuramoto →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto) | Power-grid synchronization |
-| [Open Cluster-synchronized Stuart–Landau →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau) | Neural population dynamics |
-| [Open Kuramoto–Sivashinsky →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky) | Flame-front instabilities |
+| [Open Multi-population Kuramoto →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto) | Power-grid synchronization |
+| [Open Cluster-synchronized Stuart–Landau →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau) | Neural population dynamics |
+| [Open Kuramoto–Sivashinsky →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky) | Flame-front instabilities |
 
 ### 1. Multi-population Kuramoto model
 
-[**▶ Open the animated Kuramoto walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto)
+[**▶ Open the animated Kuramoto walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto)
 
 Implemented in [environment/kuramoto.py](environment/kuramoto.py).
 
@@ -65,6 +65,8 @@ $$
 \sum_{j=1}^{N} K_{ij}\sin(\theta_j-\theta_i),
 \qquad i=1,\ldots,N
 $$
+
+**Equation intuition.** Imagine each oscillator as a clock hand on a circle. The first term, $\omega_i$, is the speed that hand would keep on its own. The sum is the network tug: a neighbor ahead pulls it forward, one behind pulls it back, and $K_{ij}$ sets how strong that connection is. The sine makes the pull depend on angular difference and keeps it bounded. If the tugs are strong enough compared with differences in natural speed, phases can align; coupling does not guarantee that they will.
 
 - $N=200$ phase oscillators are divided into five populations of 40.
 - The coupling matrix is block-structured: intra-population coupling is stronger than inter-population coupling. The stored matrix is divided by $N$ before integration.
@@ -77,9 +79,13 @@ $$
 
 [Open the Kuramoto result image](visualizations/kuramoto_results.png) · [simulation script](visualizations/vis_kuramoto.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto"><img src="visualizations/kuramoto_animation.gif" alt="High-definition animated Kuramoto phase histories and synchrony curves; click to explore the simulation" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto"><img src="visualizations/kuramoto_animation.gif" alt="High-definition animated Kuramoto phase histories and synchrony curves; click to explore the simulation" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto">Open the interactive Kuramoto lab: play, pause, scrub time, and inspect each population's synchrony.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto">Open the interactive Kuramoto lab: play, pause, scrub time, and inspect each population's synchrony.</a></p>
+
+**What the animation tells us.** In the left panel, each row is one oscillator and color encodes its phase around the circle; vertical color bands mean many oscillators are at similar phases at the same time. In the right panel, each colored curve is $R_c(t)$ for one population. A rising curve toward 1 is direct evidence of within-group phase alignment in this run. Different groups can each synchronize while keeping different phases, so “synchronized” need not mean all 200 hands point in exactly the same direction.
+
+**Why it is useful, and what it does not show.** The model isolates how network topology and coupling can create collective rhythms, which is why Kuramoto-like reductions are useful in power-system analysis. This particular plot is generated from synthetic frequencies, chosen couplings, and a fixed seed: it is not measured grid data, a stability certificate, or a prediction of a blackout. See the cited power-grid paper for the assumptions behind that application.
 
 **Real-world connection:** Power-grid researchers have mapped generator and consumer dynamics to Kuramoto-like phase oscillators, with assumptions that make the frequency distribution bimodal. This is a model-analysis connection, not a claim that this five-group demonstration represents an operational grid. [Filatrella et al., *Analysis of a power grid using the Kuramoto-like model*](https://arxiv.org/abs/0705.1305).
 
@@ -98,7 +104,7 @@ The design encourages five coarse communities; inspect the order-parameter curve
 
 ### 2. Cluster-synchronized Stuart–Landau network
 
-[**▶ Open the animated Stuart–Landau walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau)
+[**▶ Open the animated Stuart–Landau walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau)
 
 Implemented in [environment/stuart_landau.py](environment/stuart_landau.py).
 
@@ -108,6 +114,8 @@ $$
 
 The complex state $z_i$ encodes amplitude and phase. The linear term supports growth and rotation, the cubic term limits amplitude near a Hopf bifurcation, and coupling communicates state between oscillators.
 
+**Equation intuition.** Write $z_i=r_i e^{i\phi_i}$: its distance $r_i$ from the origin is amplitude, and its angle $\phi_i$ is phase. The linear term makes a small signal grow at rate $\lambda_i$ while rotating at angular speed $\omega_i$. The negative cubic term grows stronger as $r_i$ grows, balancing that initial growth and producing a bounded oscillation. The final sum pulls each complex state toward connected neighbors. Unlike the phase-only Kuramoto model, this equation lets both amplitude and phase respond.
+
 - $N=200$ oscillators are arranged in seven groups (six groups of 28 and one of 32).
 - The parameters use $\lambda_i=1$ and heterogeneous frequencies centered near 2; the coupling matrix is block-structured and normalized by $N$.
 - The visualization uses intra-group coupling 2.0 and inter-group coupling 0.01 (the environment function's default inter-group value is 0.05).
@@ -115,9 +123,13 @@ The complex state $z_i$ encodes amplitude and phase. The linear term supports gr
 
 [Open the Stuart–Landau result image](visualizations/stuart_landau_results.png) · [simulation script](visualizations/vis_stuart_landau.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau"><img src="visualizations/stuart_landau_animation.gif" alt="High-definition animation of Stuart–Landau amplitudes and complex-plane trajectories; click to explore" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau"><img src="visualizations/stuart_landau_animation.gif" alt="High-definition animation of Stuart–Landau amplitudes and complex-plane trajectories; click to explore" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau">Open the interactive Stuart–Landau lab: follow amplitude growth and rotating trajectories in the complex plane.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#stuart-landau">Open the interactive Stuart–Landau lab: follow amplitude growth and rotating trajectories in the complex plane.</a></p>
+
+**What the animation tells us.** The left panel tracks mean amplitude by cluster: growth away from zero followed by a plateau is the visual signature of nonlinear saturation. In the right panel, each trace is a trajectory in the complex plane $(\Re z,\Im z)$; a loop means the state is oscillating, while traces of the same color that approach similar loops suggest cluster-level similarity. The curves show this chosen simulation, not a measurement of brain activity.
+
+**Why it is useful, and what it does not show.** Stuart–Landau is a canonical local model near the onset of oscillation, making it useful for studying how coupling or control changes collective rhythm. It is a reduced dynamical description, not a detailed neuron model. The cited neural-control result is a separate computational study; our 200-node animation does not reproduce its parameters, intervention, or conclusions.
 
 **Real-world connection:** Stuart–Landau (Hopf) networks are used to model interacting neural populations. One computational proof-of-concept modeled 100 neuronal patches: when coupling rose, the uncontrolled network synchronized, while a simulated controller acting through 20 nodes kept it desynchronized. That study is not a clinical trial, and its controller is not part of our 200-oscillator animation. [PLOS Computational Biology study](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1006296).
 
@@ -132,7 +144,7 @@ The complex state $z_i$ encodes amplitude and phase. The linear term supports gr
 
 ### 3. Kuramoto–Sivashinsky equation
 
-[**▶ Open the animated Kuramoto–Sivashinsky walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky)
+[**▶ Open the animated Kuramoto–Sivashinsky walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky)
 
 Implemented in [environment/kuramoto_sivashinsky.py](environment/kuramoto_sivashinsky.py).
 
@@ -141,6 +153,8 @@ u_t + u\,u_x + u_{xx} + u_{xxxx}=0
 $$
 
 The nonlinear advection term competes with a destabilizing second derivative and stabilizing fourth-order hyper-diffusion, producing rich spatiotemporal dynamics. The solver uses $N=200$ Fourier grid points on a periodic domain of length $L=22$.
+
+**Equation intuition.** Think of $u(x,t)$ as the height of a one-dimensional interface. The time derivative $u_t$ asks how that shape changes. The nonlinear transport $u u_x$ moves steep and shallow parts at different speeds, so waves distort one another. The $u_{xx}$ term amplifies some long-wave disturbances, while $u_{xxxx}$ damps very short scales; their competition can create and rearrange spatial structure instead of simply smoothing everything away. Periodic boundaries mean the left and right ends of the simulated domain join.
 
 In Fourier space, the linear operator has symbol $k^2-k^4$. The code advances that linear part implicitly and the quadratic term explicitly (first-order IMEX Euler):
 
@@ -153,9 +167,13 @@ $$
 
 [Open the Kuramoto–Sivashinsky result image](visualizations/ks_results.png) · [simulation script](visualizations/vis_ks.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky"><img src="visualizations/ks_animation.gif" alt="High-definition animated Kuramoto–Sivashinsky field across space and time; click to explore" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky"><img src="visualizations/ks_animation.gif" alt="High-definition animated Kuramoto–Sivashinsky field across space and time; click to explore" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky">Open the interactive Kuramoto–Sivashinsky lab: scrub through the evolving field and inspect wave formation.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=20261011-fullplots#kuramoto-sivashinsky">Open the interactive Kuramoto–Sivashinsky lab: scrub through the evolving field and inspect wave formation.</a></p>
+
+**What the animation tells us.** The heatmap is a space–time record: horizontal position is $x$, vertical position is elapsed time, and color is the value of $u$. Each new row adds the next saved numerical state. Bands or cells that bend, merge, or break indicate evolving spatial patterns; the displayed color range is shared across frames so color changes remain comparable through time.
+
+**Why it is useful, and what it does not show.** The KS equation is a compact testbed for instability, nonlinear transport, and pattern formation, and related Sivashinsky equations appear in flame-front research. Our 1-D periodic field is a numerical solution of this model, not a flame photograph or an experimentally validated forecast. Resolution, time-step, domain, and initial-condition checks are needed before treating fine-scale features as robust. The advertised Lyapunov-dimension range is a target only; these scripts do not estimate it.
 
 **Real-world connection:** Flame-front researchers compared experiments with solutions of the related Sivashinsky equation and reproduced cell creation and fusion during a deterministic stage of front evolution. Our periodic one-dimensional KS run is an equation demonstration, not flame-camera data. [Almarcha et al., *Interface dynamics, pole trajectories, and cell size statistics*](https://doi.org/10.1103/PhysRevE.98.030202).
 

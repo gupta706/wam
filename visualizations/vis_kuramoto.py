@@ -33,7 +33,7 @@ def main():
     axes[0].plot(times, trajectory_mod, alpha=0.5, lw=0.5)
     axes[0].set_title(f'Multi-Population Kuramoto\n({n_pop} populations)')
     axes[0].set_xlabel('Time')
-    axes[0].set_ylabel('Phase (mod 2$\pi$)')
+    axes[0].set_ylabel(r'Phase (mod 2$\pi$)')
     
     # We reconstruct pop_sizes from the parameters since it's just 200 // 5
     pop_sizes = [200 // n_pop] * n_pop
