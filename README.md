@@ -50,13 +50,13 @@ Choose a model to open its interactive walkthrough. Each page combines the high-
 
 | Interactive walkthrough | Research connection |
 |---|---|
-| [Open Multi-population Kuramoto →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto) | Power-grid synchronization |
-| [Open Cluster-synchronized Stuart–Landau →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#stuart-landau) | Neural population dynamics |
-| [Open Kuramoto–Sivashinsky →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto-sivashinsky) | Flame-front instabilities |
+| [Open Multi-population Kuramoto →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto) | Power-grid synchronization |
+| [Open Cluster-synchronized Stuart–Landau →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau) | Neural population dynamics |
+| [Open Kuramoto–Sivashinsky →](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky) | Flame-front instabilities |
 
 ### 1. Multi-population Kuramoto model
 
-[**▶ Open the animated Kuramoto walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto)
+[**▶ Open the animated Kuramoto walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto)
 
 Implemented in [environment/kuramoto.py](environment/kuramoto.py).
 
@@ -77,9 +77,9 @@ $$
 
 [Open the Kuramoto result image](visualizations/kuramoto_results.png) · [simulation script](visualizations/vis_kuramoto.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto"><img src="visualizations/kuramoto_animation.gif" alt="High-definition animated Kuramoto phase histories and synchrony curves; click to explore the simulation" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto"><img src="visualizations/kuramoto_animation.gif" alt="High-definition animated Kuramoto phase histories and synchrony curves; click to explore the simulation" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto">Open the interactive Kuramoto lab: play, pause, scrub time, and inspect each population's synchrony.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto">Open the interactive Kuramoto lab: play, pause, scrub time, and inspect each population's synchrony.</a></p>
 
 **Real-world connection:** Power-grid researchers have mapped generator and consumer dynamics to Kuramoto-like phase oscillators, with assumptions that make the frequency distribution bimodal. This is a model-analysis connection, not a claim that this five-group demonstration represents an operational grid. [Filatrella et al., *Analysis of a power grid using the Kuramoto-like model*](https://arxiv.org/abs/0705.1305).
 
@@ -98,7 +98,7 @@ The design encourages five coarse communities; inspect the order-parameter curve
 
 ### 2. Cluster-synchronized Stuart–Landau network
 
-[**▶ Open the animated Stuart–Landau walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#stuart-landau)
+[**▶ Open the animated Stuart–Landau walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau)
 
 Implemented in [environment/stuart_landau.py](environment/stuart_landau.py).
 
@@ -118,9 +118,9 @@ The complex state $z_i$ encodes amplitude and phase. The linear term supports gr
 
 [Open the Stuart–Landau result image](visualizations/stuart_landau_results.png) · [simulation script](visualizations/vis_stuart_landau.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#stuart-landau"><img src="visualizations/stuart_landau_animation.gif" alt="High-definition animation of Stuart–Landau amplitudes and complex-plane trajectories; click to explore" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau"><img src="visualizations/stuart_landau_animation.gif" alt="High-definition animation of Stuart–Landau amplitudes and complex-plane trajectories; click to explore" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#stuart-landau">Open the interactive Stuart–Landau lab: follow amplitude growth and rotating trajectories in the complex plane.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#stuart-landau">Open the interactive Stuart–Landau lab: follow amplitude growth and rotating trajectories in the complex plane.</a></p>
 
 **Real-world connection:** Stuart–Landau (Hopf) networks are used to model interacting neural populations. One computational proof-of-concept modeled 100 neuronal patches: when coupling rose, the uncontrolled network synchronized, while a simulated controller acting through 20 nodes kept it desynchronized. That study is not a clinical trial, and its controller is not part of our 200-oscillator animation. [PLOS Computational Biology study](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1006296).
 
@@ -135,7 +135,7 @@ The complex state $z_i$ encodes amplitude and phase. The linear term supports gr
 
 ### 3. Kuramoto–Sivashinsky equation
 
-[**▶ Open the animated Kuramoto–Sivashinsky walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto-sivashinsky)
+[**▶ Open the animated Kuramoto–Sivashinsky walkthrough**](https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky)
 
 Implemented in [environment/kuramoto_sivashinsky.py](environment/kuramoto_sivashinsky.py).
 
@@ -156,9 +156,9 @@ $$
 
 [Open the Kuramoto–Sivashinsky result image](visualizations/ks_results.png) · [simulation script](visualizations/vis_ks.py)
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto-sivashinsky"><img src="visualizations/ks_animation.gif" alt="High-definition animated Kuramoto–Sivashinsky field across space and time; click to explore" width="100%"></a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky"><img src="visualizations/ks_animation.gif" alt="High-definition animated Kuramoto–Sivashinsky field across space and time; click to explore" width="100%"></a></p>
 
-<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html#kuramoto-sivashinsky">Open the interactive Kuramoto–Sivashinsky lab: scrub through the evolving field and inspect wave formation.</a></p>
+<p align="center"><a href="https://raw.githack.com/gupta706/wam/main/oscillator_lab.html?v=77906ae#kuramoto-sivashinsky">Open the interactive Kuramoto–Sivashinsky lab: scrub through the evolving field and inspect wave formation.</a></p>
 
 **Real-world connection:** Flame-front researchers compared experiments with solutions of the related Sivashinsky equation and reproduced cell creation and fusion during a deterministic stage of front evolution. Our periodic one-dimensional KS run is an equation demonstration, not flame-camera data. [Almarcha et al., *Interface dynamics, pole trajectories, and cell size statistics*](https://doi.org/10.1103/PhysRevE.98.030202).
 
