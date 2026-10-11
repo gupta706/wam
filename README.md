@@ -4,6 +4,10 @@ This repository contains Python implementations of three classical oscillator mo
 
 To maximize performance across platforms while avoiding architecture-specific compiler issues (such as JAX AVX instruction mismatches on macOS), the core numerical integrations have been implemented using **NumPy** and compiled Just-In-Time to highly optimized machine code via **Numba** (`@njit`).
 
+## Time-Series Foundation Model Study
+
+Check out the [interactive study on Time-Series Foundation Models](https://dipayandey1244.github.io/time-series-foundation-model/). It follows the papers from their central claims through architecture, equations, benchmark evidence and limitations, with animated explanations and original paper figures. The self-contained HTML and figure assets are also included in [`study/`](study/).
+
 ## Models Included
 
 1. **Multi-Population Kuramoto Model** (`environment/kuramoto.py`)
